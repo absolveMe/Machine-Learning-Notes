@@ -7,13 +7,12 @@ import sys
 # Config
 TOKEN = os.environ.get("NOTION_TOKEN", "").strip()
 FILE_TOKEN = os.environ.get("NOTION_FILE_TOKEN", "").strip()
-RAW_ID = os.environ.get("NOTION_SPACE_ID", "").strip() # Currently holds your Page ID
+RAW_ID = os.environ.get("NOTION_SPACE_ID", "").strip() # This is your Page ID
 
 if not TOKEN or not RAW_ID:
     print("Error: Missing variables. Check your Secrets.")
     sys.exit(1)
 
-# Headers
 headers = {
     "Cookie": f"token_v2={TOKEN}; file_token={FILE_TOKEN}",
     "Content-Type": "application/json",
@@ -24,14 +23,14 @@ headers = {
 def format_id(uid):
     uid = uid.replace("-", "")
     if len(uid) != 32:
-        print(f"Error: ID length is {len(uid)}, expected 32. Check your secret.")
+        print(f"Error: ID length is {len(uid)}. Expected 32.")
         sys.exit(1)
     return f"{uid[:8]}-{uid[8:12]}-{uid[12:16]}-{uid[16:20]}-{uid[20:]}"
 
 PAGE_ID = format_id(RAW_ID)
 print(f"Using Page ID: {PAGE_ID}")
 
-# 2. Automatically fetch the missing Space ID
+# 2. Get Space ID (Authentication Check)
 def get_space_id(page_id):
     print("Fetching Space ID from Page metadata...")
     url = "https://www.notion.so/api/v3/loadPageChunk"
@@ -47,12 +46,11 @@ def get_space_id(page_id):
         r = requests.post(url, headers=headers, json=payload)
         r.raise_for_status()
         data = r.json()
-        # Navigate the response to find space_id
         block_data = data.get('recordMap', {}).get('block', {}).get(page_id, {}).get('value', {})
         space_id = block_data.get('space_id')
         
         if not space_id:
-            print("CRITICAL: Could not find Space ID. Is the Page ID correct?")
+            print("CRITICAL: Could not find Space ID. Is this a valid Page ID?")
             sys.exit(1)
             
         print(f"Found Space ID: {space_id}")
@@ -63,22 +61,24 @@ def get_space_id(page_id):
 
 SPACE_ID = get_space_id(PAGE_ID)
 
-# 3. Request Export (Now with BOTH IDs)
+# 3. Request Export
 def request_export():
     print("Requesting Page Export...")
     url = "https://www.notion.so/api/v3/enqueueTask"
     
+    # This payload exactly mimics the browser 'Export' button
     payload = {
         "task": {
             "eventName": "exportBlock",
             "request": {
                 "blockId": PAGE_ID,
-                "spaceId": SPACE_ID, # <--- This was the missing piece!
+                "spaceId": SPACE_ID,
                 "recursive": True,
                 "exportOptions": {
                     "exportType": "markdown",
                     "timeZone": "America/New_York",
-                    "locale": "en"
+                    "locale": "en",
+                    "includeContents": "everything" # <--- This was missing before!
                 }
             }
         }
@@ -100,7 +100,7 @@ def get_download_link(task_id):
     url = "https://www.notion.so/api/v3/getTasks"
     payload = {"taskIds": [task_id]}
     
-    for _ in range(30):
+    for _ in range(40): # Wait up to ~7 minutes
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         result = response.json()['results'][0]
@@ -109,6 +109,7 @@ def get_download_link(task_id):
         print(f"Current state: {state}")
         
         if state == 'success':
+            # Look for URL in all known locations
             download_url = result.get('status', {}).get('exportURL')
             if not download_url:
                 download_url = result.get('exportURL')
@@ -116,7 +117,7 @@ def get_download_link(task_id):
             if download_url:
                 return download_url
             else:
-                print("Success reported, but no URL yet. Waiting...")
+                print("Success reported, but waiting for URL...")
                 
         elif state == 'failure':
             print("Export failed!")
