@@ -17,13 +17,15 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Install Tools
-        run: npm install @notionhq/client@latest notion-to-md@latest axios slugify
+      - name: Install Tools (Force Update)
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install @notionhq/client@latest notion-to-md@latest axios slugify
           
       - name: Run Backup
         env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}   # Your new 'secret_...'
-          NOTION_PAGE_ID: ${{ secrets.NOTION_SPACE_ID }} # Your Page ID
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
         run: node backup.js
           
       - name: Commit and Push
