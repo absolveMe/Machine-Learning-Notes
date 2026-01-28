@@ -14,42 +14,30 @@ if (!secret || !rawPageIds) {
   process.exit(1);
 }
 
-// Tách chuỗi ID thành danh sách
 const pageIds = rawPageIds.split(",").map(id => id.trim());
-
 const notion = new Client({ auth: secret });
 const n2m = new NotionToMarkdown({ notionClient: notion });
 
-// --- 1. HÀM TẢI ẢNH ---
+// --- 1. XỬ LÝ ẢNH ---
 async function downloadImage(url, filename) {
   const dir = "images";
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-
   const filePath = path.join(dir, filename);
   const writer = fs.createWriteStream(filePath);
-
-  const response = await axios({
-    url,
-    method: 'GET',
-    responseType: 'stream'
-  });
-
+  const response = await axios({ url, method: 'GET', responseType: 'stream' });
   response.data.pipe(writer);
-
   return new Promise((resolve, reject) => {
     writer.on('finish', resolve);
     writer.on('error', reject);
   });
 }
 
-// Custom Transformer cho ẢNH
 n2m.setCustomTransformer('image', async (block) => {
   const { image } = block;
   const imageUrl = image.file?.url || image.external?.url;
   const caption = image.caption.length ? image.caption[0].plain_text : "image";
   const cleanCaption = slugify(caption, { lower: true, strict: true }) || "img";
   const uniqueName = `${cleanCaption}_${block.id.slice(0, 5)}.png`;
-
   try {
     await downloadImage(imageUrl, uniqueName);
     return `![${caption}](./images/${uniqueName})`; 
@@ -58,67 +46,95 @@ n2m.setCustomTransformer('image', async (block) => {
   }
 });
 
-// Custom Transformer cho TOÁN
 n2m.setCustomTransformer('equation', async (block) => {
-  const { equation } = block;
-  return `\n$$\n${equation.expression}\n$$\n`;
+  return `\n$$\n${block.equation.expression}\n$$\n`;
 });
 
-// --- 2. HÀM XỬ LÝ THÔNG MINH (Page & Database) ---
+// --- 2. HÀM XỬ LÝ DATABASE (MỚI) ---
+async function processDatabase(dbId, dbTitle) {
+  console.log(`  -> Querying database content...`);
+  
+  // Lấy tất cả các trang trong Database
+  const response = await notion.databases.query({
+    database_id: dbId,
+    sorts: [{ property: 'Name', direction: 'ascending' }] // Sắp xếp theo tên
+  });
+
+  let fullContent = `# Database: ${dbTitle}\n\n`;
+  fullContent += `## Mục lục (${response.results.length} bài viết)\n`;
+
+  // Bước 1: Tạo mục lục
+  for (const page of response.results) {
+    const titleProp = Object.values(page.properties).find(p => p.type === 'title');
+    const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
+    fullContent += `- [${pageTitle}](#${slugify(pageTitle, {lower: true})})\n`;
+  }
+
+  fullContent += `\n---\n`;
+
+  // Bước 2: Tải nội dung từng trang con
+  for (const page of response.results) {
+    const titleProp = Object.values(page.properties).find(p => p.type === 'title');
+    const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
+    
+    console.log(`    Processing child page: "${pageTitle}"`);
+    
+    const mdblocks = await n2m.pageToMarkdown(page.id);
+    const mdString = n2m.toMarkdownString(mdblocks);
+    
+    // Thêm nội dung vào file tổng
+    fullContent += `\n## ${pageTitle}\n\n`;
+    fullContent += mdString.parent + "\n\n---\n";
+  }
+
+  return fullContent;
+}
+
+// --- 3. HÀM CHÍNH ---
 async function backupPage(id) {
   console.log(`\n--- Processing ID: ${id} ---`);
   let title = "Untitled";
-  let isDatabase = false;
+  let content = "";
 
   try {
-    // THỬ CÁCH 1: Coi nó là Page
+    // Kiểm tra xem là Page hay Database
     try {
         const pageData = await notion.pages.retrieve({ page_id: id });
         const titleProp = Object.values(pageData.properties).find(p => p.type === 'title');
         title = titleProp?.title[0]?.plain_text || "Untitled";
+        
+        // Là Page thường -> Convert luôn
+        const mdblocks = await n2m.pageToMarkdown(id);
+        const mdString = n2m.toMarkdownString(mdblocks);
+        content = mdString.parent;
+
     } catch (error) {
-        // Nếu lỗi bảo là "Validation Error" (nghĩa là nó là Database), thì thử cách 2
         if (error.code === 'validation_error') {
-            console.log("  -> Detected as Database. Switching mode...");
-            isDatabase = true;
+            // Là Database -> Gọi hàm xử lý riêng
+            console.log("  -> Detected Database type.");
             const dbData = await notion.databases.retrieve({ database_id: id });
-            // Database lưu title khác với Page
             title = dbData.title[0]?.plain_text || "Untitled_Database";
+            content = await processDatabase(id, title);
         } else {
-            throw error; // Nếu lỗi khác (ví dụ sai quyền) thì ném lỗi ra ngoài
+            throw error;
         }
     }
     
-    // Tạo tên file
     const safeTitle = slugify(title, { replacement: '_', remove: /[*+~.()'"!:@]/g });
     const fileName = `${safeTitle}.md`;
 
-    console.log(`Found "${title}" -> Saving to: ${fileName}`);
-
-    // Convert sang Markdown
-    // (Lưu ý: n2m.pageToMarkdown vẫn hoạt động với Database ID, nó sẽ list các page con ra)
-    const mdblocks = await n2m.pageToMarkdown(id);
-    let mdString = n2m.toMarkdownString(mdblocks);
-    
-    // Nếu là Database, thêm một dòng chú thích ở đầu file
-    if (isDatabase) {
-        mdString.parent = `# Database: ${title}\n\n(Danh sách các trang con)\n\n` + mdString.parent;
-    }
-    
-    // Lưu file
-    fs.writeFileSync(fileName, mdString.parent);
-    console.log(`✅ Success!`);
+    fs.writeFileSync(fileName, content);
+    console.log(`✅ Saved to: ${fileName}`);
     
   } catch (error) {
-    console.error(`❌ Failed to backup ID ${id}:`, error.body || error.message);
+    console.error(`❌ Failed ID ${id}:`, error.message);
   }
 }
 
-// --- CHẠY VÒNG LẶP ---
 (async () => {
-  console.log(`Found ${pageIds.length} items to backup.`);
+  console.log(`Found ${pageIds.length} items.`);
   for (const id of pageIds) {
     await backupPage(id);
   }
-  console.log("\n🎉 All operations completed.");
+  console.log("\n🎉 Done.");
 })();
