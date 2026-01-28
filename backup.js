@@ -7,17 +7,20 @@ const slugify = require("slugify");
 
 // Config
 const secret = process.env.NOTION_TOKEN;
-const pageId = process.env.NOTION_PAGE_ID;
+const rawPageIds = process.env.NOTION_PAGE_ID;
 
-if (!secret || !pageId) {
-  console.error("Error: Missing variables.");
+if (!secret || !rawPageIds) {
+  console.error("Error: Missing NOTION_TOKEN or NOTION_PAGE_ID.");
   process.exit(1);
 }
+
+// Tách chuỗi ID thành danh sách (mảng) dựa trên dấu phẩy
+const pageIds = rawPageIds.split(",").map(id => id.trim());
 
 const notion = new Client({ auth: secret });
 const n2m = new NotionToMarkdown({ notionClient: notion });
 
-// --- 1. XỬ LÝ ẢNH (Tải về máy thay vì dùng link ảo) ---
+// --- 1. HÀM TẢI ẢNH ---
 async function downloadImage(url, filename) {
   const dir = "images";
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
@@ -39,18 +42,16 @@ async function downloadImage(url, filename) {
   });
 }
 
+// Custom Transformer cho ẢNH
 n2m.setCustomTransformer('image', async (block) => {
   const { image } = block;
   const imageUrl = image.file?.url || image.external?.url;
   const caption = image.caption.length ? image.caption[0].plain_text : "image";
-  
-  // Đặt tên file ảnh gọn gàng
   const cleanCaption = slugify(caption, { lower: true, strict: true }) || "img";
-  // Thêm ID ngắn để tránh trùng tên
   const uniqueName = `${cleanCaption}_${block.id.slice(0, 5)}.png`;
 
   try {
-    console.log(`Downloading image: ${uniqueName}...`);
+    // console.log(`Downloading image: ${uniqueName}...`); // Bỏ comment nếu muốn xem log chi tiết
     await downloadImage(imageUrl, uniqueName);
     return `![${caption}](./images/${uniqueName})`; 
   } catch (error) {
@@ -58,24 +59,26 @@ n2m.setCustomTransformer('image', async (block) => {
   }
 });
 
-// --- 2. XỬ LÝ TOÁN (Sửa lỗi không hiện trong gạch đầu dòng) ---
+// Custom Transformer cho TOÁN
 n2m.setCustomTransformer('equation', async (block) => {
   const { equation } = block;
-  // Thêm dòng trắng (\n) để GitHub hiểu đây là khối toán học
   return `\n$$\n${equation.expression}\n$$\n`;
 });
 
-// --- CHẠY CHƯƠNG TRÌNH ---
-(async () => {
-  console.log(`Connecting to Page ID: ${pageId}...`);
-  
+// --- 2. HÀM XỬ LÝ TỪNG PAGE ---
+async function backupPage(pageId) {
+  console.log(`\n--- Processing Page ID: ${pageId} ---`);
   try {
     // Lấy tên Page
     const pageData = await notion.pages.retrieve({ page_id: pageId });
     const titleProp = Object.values(pageData.properties).find(p => p.type === 'title');
     const title = titleProp?.title[0]?.plain_text || "Untitled";
+    
+    // Tạo tên file an toàn
     const safeTitle = slugify(title, { replacement: '_', remove: /[*+~.()'"!:@]/g });
     const fileName = `${safeTitle}.md`;
+
+    console.log(`Found Page: "${title}" -> Saving to: ${fileName}`);
 
     // Convert sang Markdown
     const mdblocks = await n2m.pageToMarkdown(pageId);
@@ -83,10 +86,22 @@ n2m.setCustomTransformer('equation', async (block) => {
     
     // Lưu file
     fs.writeFileSync(fileName, mdString.parent);
-    console.log(`Success! Saved content to: ${fileName}`);
+    console.log(`✅ Success!`);
     
   } catch (error) {
-    console.error("Backup Failed:", error);
-    process.exit(1);
+    console.error(`❌ Failed to backup page ${pageId}:`, error.body || error.message);
+    // Không dùng process.exit(1) ở đây để nếu 1 page lỗi, các page khác vẫn chạy tiếp
   }
+}
+
+// --- CHẠY VÒNG LẶP ---
+(async () => {
+  console.log(`Found ${pageIds.length} pages to backup.`);
+  
+  // Dùng vòng lặp for...of để chạy tuần tự từng page
+  for (const id of pageIds) {
+    await backupPage(id);
+  }
+  
+  console.log("\n🎉 All operations completed.");
 })();
