@@ -22,21 +22,24 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID || secrets.NOTION_SPACE_ID }}
         run: |
-          # 1. Tạo phòng cách ly (thư mục mới)
+          # 1. Dọn dẹp phòng cũ (nếu có) để tránh lỗi "File exists"
+          rm -rf clean_room
+
+          # 2. Tạo phòng mới
           mkdir clean_room
           
-          # 2. Copy code vào đó
+          # 3. Copy code vào đó
           cp backup.js clean_room/
           
-          # 3. Vào phòng và cài đặt thư viện MỚI NHẤT (Bỏ qua thư mục node_modules cũ ở ngoài)
+          # 4. Vào phòng và cài đặt thư viện MỚI NHẤT
           cd clean_room
           npm init -y
           npm install @notionhq/client@latest notion-to-md@latest axios slugify
           
-          # 4. Chạy code
+          # 5. Chạy code
           node backup.js
           
-          # 5. Đem kết quả (file .md và ảnh) ra ngoài để lưu
+          # 6. Đem kết quả ra ngoài để lưu
           cp *.md ../ || true
           if [ -d "images" ]; then cp -r images ../; fi
 
