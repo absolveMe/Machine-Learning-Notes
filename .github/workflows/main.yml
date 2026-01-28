@@ -1,6 +1,6 @@
 name: Notion Backup
 on:
-  workflow_dispatch:      # Allows manual triggering
+  workflow_dispatch:      # Allows you to run it manually
   schedule:
     - cron: '0 0 * * *'   # Runs daily at midnight
 
