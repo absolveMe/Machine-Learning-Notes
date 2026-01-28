@@ -30,7 +30,7 @@ def request_export():
                     "exportType": "markdown",
                     "timeZone": "America/New_York",
                     "locale": "en",
-                    "includeContents": "no_files" # Change to "everything" if you want images/files
+                    "includeContents": "no_files"
                 }
             }
         }
@@ -55,15 +55,35 @@ def get_download_link(task_id):
         print(f"Current state: {state}")
         
         if state == 'success':
-            return result['status']['exportURL']
+            # --- DEBUG SECTION ---
+            print("\n!!! DEBUG: FULL RESPONSE FROM NOTION !!!")
+            print(json.dumps(result, indent=2))
+            print("!!! END DEBUG !!!\n")
+            # ---------------------
+
+            # Try to find the URL in the standard place
+            download_url = result.get('status', {}).get('exportURL')
+            
+            # If not there, try the top level (sometimes happens)
+            if not download_url:
+                download_url = result.get('exportURL')
+
+            if download_url:
+                return download_url
+            else:
+                print("CRITICAL ERROR: Notion said 'Success' but gave no URL in the usual places.")
+                print("Please copy the DEBUG info above and share it.")
+                sys.exit(1)
+                
         elif state == 'failure':
             print("Export failed!")
+            print(json.dumps(result, indent=2))
             sys.exit(1)
         
         time.sleep(10)
 
 def download_file(url):
-    print("Downloading file...")
+    print(f"Downloading file from {url[:50]}...")
     local_filename = "export.zip"
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
