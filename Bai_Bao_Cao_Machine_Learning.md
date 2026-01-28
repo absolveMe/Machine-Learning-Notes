@@ -21,110 +21,108 @@ Note lại mình đã học gì:
 ### Tiền xử lý dữ liệu
 
 
-    ### Data Cleaning
+### Data Cleaning
 
-        - Tiền xử lý dữ liệu nhắc tới việc chuẩn bị và biến đổi các dư liệu thô thành các dữ liệu mà cách model học máy có thể sử dụng được. Việc mình preprocess các dữ liệu ấy sẽ giúp cải thiện chất lượng cũng như là độ hiệu quả của ML.
-        - Việc tiền xử lý này bao gồm:
-            - Xử lý các giá trị còn thiếu
-                - Để tìm ra các giá trị còn thiếu thì mình có thể dùng các công cụ phác hoạ hoặc thống kê để tìm ra các cột/feature đang thiếu giá trị.
-                - Nếu mà tỷ lệ thiếu thấp và không quan trọng thì có thể xoá hoàn toàn bằng các hàm trong các thư viện.
-                - Với các giá trị số học thì mình có thể điền bù vào bằng các giá trị trung bình, chính giữa,…. Nếu mà là trong bài toán phân loại thì có thể điền vào category phổ biến nhất
-            - Xử lý các giá trị ngoại lệ:
-                - Ví dụ: các giá trị ngoại lệ, chẳng hạn 1 căn nhà biệt thự 2000 mét vuông giá 200 tỷ trong khi nhà bình thường khoảng 100m2, sẽ khiến linear regression bị nghiêng về điểm đấy → prediction bị lệch
-                - Có thể tìm ra các giá trị này bằng cách minh hoạ data của mình thành một scatterplot
+- Tiền xử lý dữ liệu nhắc tới việc chuẩn bị và biến đổi các dư liệu thô thành các dữ liệu mà cách model học máy có thể sử dụng được. Việc mình preprocess các dữ liệu ấy sẽ giúp cải thiện chất lượng cũng như là độ hiệu quả của ML.
+- Việc tiền xử lý này bao gồm:
+    - Xử lý các giá trị còn thiếu
+        - Để tìm ra các giá trị còn thiếu thì mình có thể dùng các công cụ phác hoạ hoặc thống kê để tìm ra các cột/feature đang thiếu giá trị.
+        - Nếu mà tỷ lệ thiếu thấp và không quan trọng thì có thể xoá hoàn toàn bằng các hàm trong các thư viện.
+        - Với các giá trị số học thì mình có thể điền bù vào bằng các giá trị trung bình, chính giữa,…. Nếu mà là trong bài toán phân loại thì có thể điền vào category phổ biến nhất
+    - Xử lý các giá trị ngoại lệ:
+        - Ví dụ: các giá trị ngoại lệ, chẳng hạn 1 căn nhà biệt thự 2000 mét vuông giá 200 tỷ trong khi nhà bình thường khoảng 100m2, sẽ khiến linear regression bị nghiêng về điểm đấy → prediction bị lệch
+        - Có thể tìm ra các giá trị này bằng cách minh hoạ data của mình thành một scatterplot
 
-                ![image](./images/image_2e813529.png)
+        ![image](./images/image_2e813529.png)
 
-                - Trong một số trường hợp thì mình có thể loại bỏ hoàn thoàn các điểm như vậy. Hoặc có thể xử dụng các kỹ năng lọc như một ngưỡng xác suất để loại bỏ chúng.
-            - Xử lý các giá trị lặp
-                - Các giá trị lặp có thể thể dẫn tới việc một số điểm, hoặc bias bị nhấn mạnh
-                - Có thể dùng các hàm của các thư viện như duplicated() trong pandas để tìm ra.
-                - Nếu thông tin lặp lại ấy không quan trọng thì có thể loại bỏ bằng drop_duplicates() trong pandas hoặc các hàm tương tự khác trong thư viện.
+        - Trong một số trường hợp thì mình có thể loại bỏ hoàn thoàn các điểm như vậy. Hoặc có thể xử dụng các kỹ năng lọc như một ngưỡng xác suất để loại bỏ chúng.
+    - Xử lý các giá trị lặp
+        - Các giá trị lặp có thể thể dẫn tới việc một số điểm, hoặc bias bị nhấn mạnh
+        - Có thể dùng các hàm của các thư viện như duplicated() trong pandas để tìm ra.
+        - Nếu thông tin lặp lại ấy không quan trọng thì có thể loại bỏ bằng drop_duplicates() trong pandas hoặc các hàm tương tự khác trong thư viện.
 
-    ### Data Normalization
-
-
-        Mục đích của data Normalization là đưa tất cả các feature lại thành một khoảng nhất định mà không làm biến đối sự khác biệt giữa các khoảng của chúng. Cái này là để khi chạy học máy sẽ hiệu quả và converge nhanh hơn.
+### Data Normalization
 
 
-        → Giảm thiểu ảnh hưởng của các giá trị ngoài lề.
+Mục đích của data Normalization là đưa tất cả các feature lại thành một khoảng nhất định mà không làm biến đối sự khác biệt giữa các khoảng của chúng. Cái này là để khi chạy học máy sẽ hiệu quả và converge nhanh hơn.
 
 
-        Một số phương thức normalization:
-
-        1. Min - max scaling:
-        - Formula:Xnorm=X−Xmin/Xmax−Xmin
-        - Range: Khoảng giá trị rơi vào giữa 0 và 1.
-
-        → Phù hợp cho các thuật toán đòi hỏi input feature nằm trong một khoảng nhất định, chẳng hạn neural network. Lưu ý rằng cái này dễ bị ảnh hưởng bởi outliers.
-
-        1. Z-score normalization
-        - Formula:
-
-        ![image](./images/image_2ee13529.png)
-
-        - Range: Khoảng giá trị có thể thay đổi nhưng sẽ giao động quanh 0.
-        - Transforms values to have a mean of 0 and standard deviation of 1.
-
-        → Phù hợp cho các thuật toán như kiểu k-means cluttering, linear regression, logistic regression
+→ Giảm thiểu ảnh hưởng của các giá trị ngoài lề.
 
 
-    ### Feature Scaling
+Một số phương thức normalization:
 
-        - Scaling Feature giúp chuẩn hoá giá trị của các variable độc lập hoặc feature của data set. Feature Scaling giúp đưa tất cả các feature về một khoảng cụ thể, phòng cho trường hợp một feature lớn sẽ đàn áp các feature khác nhỏ hơn trong quá trình học máy.
-        - Feature Scaling giống Data Normalization là một phần của feature scaling
-        - Ngoài 2 cách trong Data Normalization mình có:
-            - MaxAbsScaler: Chia cho giá trị tuyệt đối lớn nhất của Feature đó:
+1. Min - max scaling:
+- Formula:Xnorm=X−Xmin/Xmax−Xmin
+- Range: Khoảng giá trị rơi vào giữa 0 và 1.
 
-            ![image](./images/image_2ee13529.png)
+→ Phù hợp cho các thuật toán đòi hỏi input feature nằm trong một khoảng nhất định, chẳng hạn neural network. Lưu ý rằng cái này dễ bị ảnh hưởng bởi outliers.
 
+1. Z-score normalization
+- Formula:
 
-            → Phạm vi sẽ nằm trong [-1;1] hoặc [0;1] nếu dữ liệu gốc toàn dương.
+![image](./images/image_2ee13529.png)
 
+- Range: Khoảng giá trị có thể thay đổi nhưng sẽ giao động quanh 0.
+- Transforms values to have a mean of 0 and standard deviation of 1.
 
-            → Phù hợp cho các data set chứa các dữ liệu thưa, khi mà việc mình đảm bảo giữ nguyên các giá trị là “0” quan trọng, chẳng hạn trong phân tích ký tự và chữ cái.
-
-            - RobustScaler (tốt cho khi có nhiều outliers): Sử dụng Median và IQR Mean và Standard Deviation:
-                - Median là giá trị đứng giữa nên không bị ảnh hưởng bởi giá trị ngoại lai.
-                - IQR chỉ quan tâm tới 50% số người ở giữa(25% → 75%).
-
-            ![image](./images/image_2ee13529.png)
+→ Phù hợp cho các thuật toán như kiểu k-means cluttering, linear regression, logistic regression
 
 
-    ### Handling Catergorical Data
+### Feature Scaling
 
-        - Non-numeric: Những Data dạng này được đại diện bằng chuỗi ký tự hoặc nhãn, và các thông tin như này không thể được xử lý tực tiếp.
-        - Ordinal and Nominal Variables: Các catergorical data có thể ordinial (có thứ tự) hoặc nominal(không có thứ tự cụ thể). Nhầm lần giữa 2 loại này có thể dẫn tới sai xót.
+- Scaling Feature giúp chuẩn hoá giá trị của các variable độc lập hoặc feature của data set. Feature Scaling giúp đưa tất cả các feature về một khoảng cụ thể, phòng cho trường hợp một feature lớn sẽ đàn áp các feature khác nhỏ hơn trong quá trình học máy.
+- Feature Scaling giống Data Normalization là một phần của feature scaling
+- Ngoài 2 cách trong Data Normalization mình có:
+    - MaxAbsScaler: Chia cho giá trị tuyệt đối lớn nhất của Feature đó:
 
-            →Nominal: Chó, Mèo, Ngựa,…
+    ![image](./images/image_2ee13529.png)
 
 
-            →Ordinal: Cấp 3, Đại Học, Thạc Sĩ, Tiến Sĩ
+    → Phạm vi sẽ nằm trong [-1;1] hoặc [0;1] nếu dữ liệu gốc toàn dương.
 
-        - Các cách để encode các biến dạng loại:
-            - Label Encoding: Gán một ký tự cho mỗi nhóm cố định. Phù hợp cho các biến theo thứ tự, có một thứ tự có ý nghĩa giữa các nhóm khác nhau
 
-                → LabelEncoder() trong python’s scikit-learn
+    → Phù hợp cho các data set chứa các dữ liệu thưa, khi mà việc mình đảm bảo giữ nguyên các giá trị là “0” quan trọng, chẳng hạn trong phân tích ký tự và chữ cái.
 
-            - One-hot encoding: Tạo ra các cột chỉ trứa giá trị nhị phân, biểu thị sự có hoặc không có mặt của giá trị ấy. (vd màu sắc thì mình có 3 cột đỏ xanh vàng). Tốt cho giá trị nominal.
-            - Dummy Encoding: Giống với One-Hot Encoding nhưng bỏ đi một cột, chẳng hạn nếu một màu có 3 cột đỏ, vàng, xanh thì ta sẽ bỏ cột đỏ đi, nếu cột vàng và xanh đều mang giá trị 0, thì có thể suy ra đó là màu đỏ.
+    - RobustScaler (tốt cho khi có nhiều outliers): Sử dụng Median và IQR Mean và Standard Deviation:
+        - Median là giá trị đứng giữa nên không bị ảnh hưởng bởi giá trị ngoại lai.
+        - IQR chỉ quan tâm tới 50% số người ở giữa(25% → 75%).
 
-                → Thường sử dụng trong các mô hình regression, khi một nhóm đóng vai trò làm nhóm đối chiếu.
+    ![image](./images/image_2ee13529.png)
+
+
+### Handling Catergorical Data
+
+- Non-numeric: Những Data dạng này được đại diện bằng chuỗi ký tự hoặc nhãn, và các thông tin như này không thể được xử lý tực tiếp.
+- Ordinal and Nominal Variables: Các catergorical data có thể ordinial (có thứ tự) hoặc nominal(không có thứ tự cụ thể). Nhầm lần giữa 2 loại này có thể dẫn tới sai xót.
+
+    →Nominal: Chó, Mèo, Ngựa,…
+
+
+    →Ordinal: Cấp 3, Đại Học, Thạc Sĩ, Tiến Sĩ
+
+- Các cách để encode các biến dạng loại:
+    - Label Encoding: Gán một ký tự cho mỗi nhóm cố định. Phù hợp cho các biến theo thứ tự, có một thứ tự có ý nghĩa giữa các nhóm khác nhau
+
+        → LabelEncoder() trong python’s scikit-learn
+
+    - One-hot encoding: Tạo ra các cột chỉ trứa giá trị nhị phân, biểu thị sự có hoặc không có mặt của giá trị ấy. (vd màu sắc thì mình có 3 cột đỏ xanh vàng). Tốt cho giá trị nominal.
+    - Dummy Encoding: Giống với One-Hot Encoding nhưng bỏ đi một cột, chẳng hạn nếu một màu có 3 cột đỏ, vàng, xanh thì ta sẽ bỏ cột đỏ đi, nếu cột vàng và xanh đều mang giá trị 0, thì có thể suy ra đó là màu đỏ.
+
+        → Thường sử dụng trong các mô hình regression, khi một nhóm đóng vai trò làm nhóm đối chiếu.
 
 
 ### Các Dạng Bài Toán Chính
 
 
-    Để hiểu được các thuật toán (Optimization Algorithms) này, em nghĩ sẽ chia thành nhiều bậc khác nhau. Với bậc, là bậc của đạo hàm được sử dụng. Tới thời điểm hiện tại em mới học về Gradient Descent, bậc 1, nên em sẽ tìm hiểu về các thuật toán cùng bậc đó. Đây là 3 thuật toán thường được sử dụng mà em tìm được:
+Để hiểu được các thuật toán (Optimization Algorithms) này, em nghĩ sẽ chia thành nhiều bậc khác nhau. Với bậc, là bậc của đạo hàm được sử dụng. Tới thời điểm hiện tại em mới học về Gradient Descent, bậc 1, nên em sẽ tìm hiểu về các thuật toán cùng bậc đó. Đây là 3 thuật toán thường được sử dụng mà em tìm được:
 
-    - SGD kèm Momentum(SGD with momentum)
-    - Adam (Adaptive Moment Estimation)
-    - RMSprop (Root Mean Square Propagation)
+- SGD kèm Momentum(SGD with momentum)
+- Adam (Adaptive Moment Estimation)
+- RMSprop (Root Mean Square Propagation)
 
-    ### SGD with Momentum
+### SGD with Momentum
 
-<details>
-<summary>SGD</summary>
 
 Stochastic Gradient Descent là biến tấu của Gradient Descent nhưng kèm theo một số ưu điểm về độ hiệu quả, và scalability.
 
@@ -189,130 +187,127 @@ $$
 
 - Sử dụng SGD with Momentum giúp tránh cực tiểu cục bộ, giảm giao động, và converge nhanh hơn.
 
-</details>
+### RMSProp
 
 
-    ### RMSProp
+RMSProp là một cải tiến của Gradient Descent và tập trung duy nhất vào việc tự động điều chỉnh tốc độ học dựa trên độ dốc của địa hình. (Làm sao để không đi quá nhanh ở chỗ dốc đứng và không đi quá chậm ở chỗ bằng phẳng)
 
 
-        RMSProp là một cải tiến của Gradient Descent và tập trung duy nhất vào việc tự động điều chỉnh tốc độ học dựa trên độ dốc của địa hình. (Làm sao để không đi quá nhanh ở chỗ dốc đứng và không đi quá chậm ở chỗ bằng phẳng)
+Ta tính gradient với tham số cũ:
 
 
-        Ta tính gradient với tham số cũ:
+$$
+g_t = \nabla_\theta f(\theta_{t-1})
+$$
 
 
-        $$
-        g_t = \nabla_\theta f(\theta_{t-1})
-        $$
+Tính độ dốc đã được tích luỹ từ lịch sử độ lớn của các con dốc đã đi qua:
 
 
-        Tính độ dốc đã được tích luỹ từ lịch sử độ lớn của các con dốc đã đi qua:
+$$
+v_t = \beta v_{t-1} + (1 - \beta) g_t^2
+$$
+
+- B: Decay Rate: thường đặt là 0.9 hoặc 0.99, nhắc tới việc nên nhớ bao nhiều về độ dốc trong quá khứ?
+- v_t lớn → địa hình dốc gắt, thay đổi mạnh
+- v_t nhỏ → địa hình phẳng, êm ả
+- g_t^2 : bình phương đạo hàm của cost function để chỉ quan tâm tới độ lớn và loại bỏ phần âm.
+
+Cập nhật bước nhảy:
 
 
-        $$
-        v_t = \beta v_{t-1} + (1 - \beta) g_t^2
-        $$
-
-        - B: Decay Rate: thường đặt là 0.9 hoặc 0.99, nhắc tới việc nên nhớ bao nhiều về độ dốc trong quá khứ?
-        - v_t lớn → địa hình dốc gắt, thay đổi mạnh
-        - v_t nhỏ → địa hình phẳng, êm ả
-        - g_t^2 : bình phương đạo hàm của cost function để chỉ quan tâm tới độ lớn và loại bỏ phần âm.
-
-        Cập nhật bước nhảy:
+$$
+\theta_t = \theta_{t-1} - \frac{\alpha}{\sqrt{v_t} + \epsilon} \cdot g_t
+$$
 
 
-        $$
-        \theta_t = \theta_{t-1} - \frac{\alpha}{\sqrt{v_t} + \epsilon} \cdot g_t
-        $$
+Nhìn vào công thức ta thấy nếu mà gt^2 lớn → vt lớn → mẫu số căn vt lớn → phân số a/căn vt nhỏ → bước nhảy bị thu lại
 
 
-        Nhìn vào công thức ta thấy nếu mà gt^2 lớn → vt lớn → mẫu số căn vt lớn → phân số a/căn vt nhỏ → bước nhảy bị thu lại
+→ Tương tự cho điều ngược lại
+
+- RMSProp sẽ được sử dụng ở thuật toán Adam ở dưới. Mình đã viết phần adam trước khi viết RMSProp nên phần này viết không kỹ lắm.
+
+### Adam 
+
+- Viết tắt cho Adpative Movement Estimation. Adam là sự kết hợp ưu điểm của 2 thuật toán phổ biến: Momentum(giữ đà) và RMSprop(tự động điều chỉnh Learning Rate cho từng tham số riêng biệt - Adaptive Learning Rate)
+
+Các bước:
+
+1. Tính Gradient tại thời điểm t:
+
+$$
+g_t = \nabla_{\theta} f(\theta_{t-1})
+$$
+
+- "Tại bước hiện tại (t), hãy nhìn vào vị trí cũ (t-1) mà chúng ta đang đứng (theta). Sau đó, tính toán độ dốc (nabla) của ngọn núi (f) tại vị trí đó để xem hướng nào dốc nhất. Kết quả độ dốc đó gọi là g_t.”
+1. Cập nhật momen bậc 1: (tính đà di chuyển từ quá khứ)
+
+$$
+m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t
+$$
+
+- momen mới (mt) được tính bằng cách lấy 90%(B1=0.9) của đà cũ m_t-1, cộng với 10% độ dốc mới vừa quan sát ((1-B1).gt)
+- B1 là hệ số suy giảm, mình thường có thể chọn được là 0.9
+- 1-B1 là phần còn lại, nói về độ quan trọng của thông tin mới(gradient thời điểm t là gt)
+
+→ kiểu độ dốc chỉ có ảnh hưởng 10% vào hướng đi hiện tại
+
+1. Momen bậc 2 - RMSprop
+
+$$
+v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
+$$
+
+- avt: second moment vector đại diện cho độ biến động trung bình của địa hình.
+- B2: Hệ số suy giảm cho momen bậc 2 (thường là 0.999), do muốn ghi nhớ lịch sử độ biến động trong một khoảng thời gian rất dài.
+- v_t-1: momen bậc 2 trong quá khứ
+- g_t^2: bình phương của gradient, chỉ quan tâm tới độ lớn, không quan tâm tới hướng đi (do luôn dương)
+
+→ tình toán độ gập ghềnh mới (vt) bằng cách giữ lại 99.9% thông tin về độ gập ghềnh trong quá khứ, cộng thêm một chút (0.01%) của độ lớn con dốc hiện tại. 
+
+- Mình làm như này là do trong bước 5, nếu vt lớn thì thuật toán sẽ chia nhỏ bước đi đi
+    1. Bias Correction
+
+    $$
+    \hat{m}_t = \frac{m_t}{1 - \beta_1^t} \\\hat{v}_t = \frac{v_t}{1 - \beta_2^t}
+    $$
+
+    - Ban đầu mt và vt sẽ được khởi tạo bằng 0,  nên ở bước này ta sẽ chuẩn hoá điều đó.
+
+    → Ta sẽ phóng to các giá trị m và v lên để bù đắp cho việc nó đc khởi tạo bằng 0 ở ban đầu, khi đã chạy đc lâu (t lớn0 thì hãy để nguyên chúng vì lúc này đã chuẩn xác
 
 
-        → Tương tự cho điều ngược lại
+    → Mình sử dụng 1-B^t là do chẳng hạn t = 1 thì 1 - B^t = 0.1 → nhân với 10 để bù đắp cho việc ban đầu nó nhỏ. Sau khi lớn(t = 100, 0.9^100) thì mẫu số 1 - B^t sẽ tự động giữ nguyên giá trị (không cần sửa lỗi nữa)
 
-        - RMSProp sẽ được sử dụng ở thuật toán Adam ở dưới. Mình đã viết phần adam trước khi viết RMSProp nên phần này viết không kỹ lắm.
+    1. Cập nhật tham số
 
-    ### Adam 
+    $$
+    \theta_t = \theta_{t-1} - \alpha \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}
+    $$
 
-        - Viết tắt cho Adpative Movement Estimation. Adam là sự kết hợp ưu điểm của 2 thuật toán phổ biến: Momentum(giữ đà) và RMSprop(tự động điều chỉnh Learning Rate cho từng tham số riêng biệt - Adaptive Learning Rate)
+    - Tính được hướng đi và độ gập ghềnh được chuẩn hoá ta sẽ thay đổi các trọng số thsu
+    - m_t_hat: hướng đi đã sửa
+    - căn v_t_hat: căn bậc 2 của độ biến động, lấy từ bước 4 và khai căn (cái này tạo nên sự thích ứng của adam)
+        - Nếu v lớn (có sự thay đổi mạnh) → mẫu số lớn → phân số nhỏ đi → bước nhảy thu nhỏ lại để an toàn
+        - Tương tự điều ngược lại
+    - Epsilon là một số cực kỳ nhỏ (10^-8) thường để tránh đi việc chia cho 0)
 
-        Các bước:
-
-        1. Tính Gradient tại thời điểm t:
-
-        $$
-        g_t = \nabla_{\theta} f(\theta_{t-1})
-        $$
-
-        - "Tại bước hiện tại (t), hãy nhìn vào vị trí cũ (t-1) mà chúng ta đang đứng (theta). Sau đó, tính toán độ dốc (nabla) của ngọn núi (f) tại vị trí đó để xem hướng nào dốc nhất. Kết quả độ dốc đó gọi là g_t.”
-        1. Cập nhật momen bậc 1: (tính đà di chuyển từ quá khứ)
-
-        $$
-        m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t
-        $$
-
-        - momen mới (mt) được tính bằng cách lấy 90%(B1=0.9) của đà cũ m_t-1, cộng với 10% độ dốc mới vừa quan sát ((1-B1).gt)
-        - B1 là hệ số suy giảm, mình thường có thể chọn được là 0.9
-        - 1-B1 là phần còn lại, nói về độ quan trọng của thông tin mới(gradient thời điểm t là gt)
-
-        → kiểu độ dốc chỉ có ảnh hưởng 10% vào hướng đi hiện tại
-
-        1. Momen bậc 2 - RMSprop
-
-        $$
-        v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
-        $$
-
-        - avt: second moment vector đại diện cho độ biến động trung bình của địa hình.
-        - B2: Hệ số suy giảm cho momen bậc 2 (thường là 0.999), do muốn ghi nhớ lịch sử độ biến động trong một khoảng thời gian rất dài.
-        - v_t-1: momen bậc 2 trong quá khứ
-        - g_t^2: bình phương của gradient, chỉ quan tâm tới độ lớn, không quan tâm tới hướng đi (do luôn dương)
-
-        → tình toán độ gập ghềnh mới (vt) bằng cách giữ lại 99.9% thông tin về độ gập ghềnh trong quá khứ, cộng thêm một chút (0.01%) của độ lớn con dốc hiện tại. 
-
-        - Mình làm như này là do trong bước 5, nếu vt lớn thì thuật toán sẽ chia nhỏ bước đi đi
-            1. Bias Correction
-
-            $$
-            \hat{m}_t = \frac{m_t}{1 - \beta_1^t} \\\hat{v}_t = \frac{v_t}{1 - \beta_2^t}
-            $$
-
-            - Ban đầu mt và vt sẽ được khởi tạo bằng 0,  nên ở bước này ta sẽ chuẩn hoá điều đó.
-
-            → Ta sẽ phóng to các giá trị m và v lên để bù đắp cho việc nó đc khởi tạo bằng 0 ở ban đầu, khi đã chạy đc lâu (t lớn0 thì hãy để nguyên chúng vì lúc này đã chuẩn xác
-
-
-            → Mình sử dụng 1-B^t là do chẳng hạn t = 1 thì 1 - B^t = 0.1 → nhân với 10 để bù đắp cho việc ban đầu nó nhỏ. Sau khi lớn(t = 100, 0.9^100) thì mẫu số 1 - B^t sẽ tự động giữ nguyên giá trị (không cần sửa lỗi nữa)
-
-            1. Cập nhật tham số
-
-            $$
-            \theta_t = \theta_{t-1} - \alpha \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}
-            $$
-
-            - Tính được hướng đi và độ gập ghềnh được chuẩn hoá ta sẽ thay đổi các trọng số thsu
-            - m_t_hat: hướng đi đã sửa
-            - căn v_t_hat: căn bậc 2 của độ biến động, lấy từ bước 4 và khai căn (cái này tạo nên sự thích ứng của adam)
-                - Nếu v lớn (có sự thay đổi mạnh) → mẫu số lớn → phân số nhỏ đi → bước nhảy thu nhỏ lại để an toàn
-                - Tương tự điều ngược lại
-            - Epsilon là một số cực kỳ nhỏ (10^-8) thường để tránh đi việc chia cho 0)
-
-                ![image](./images/image_2f413529.png)
+        ![image](./images/image_2f413529.png)
 
 
 ### Machine Learning Workflow
 
-    - ML workflow là một quá trình có hệ thống của việc phát triển, training, đánh giá và sử dụng các mô hình ML. Nó bao gồm một chuỗi các bước giúp cho những người thực hiện xuyên suốt quá trình của một dự án ML, từ việc định nghĩa vấn đề và áp dụng câu trả lời.
+- ML workflow là một quá trình có hệ thống của việc phát triển, training, đánh giá và sử dụng các mô hình ML. Nó bao gồm một chuỗi các bước giúp cho những người thực hiện xuyên suốt quá trình của một dự án ML, từ việc định nghĩa vấn đề và áp dụng câu trả lời.
 
-    Các bước chính trong một ML Workflow:
+Các bước chính trong một ML Workflow:
 
-    1. Problem Definition
-    2. Data collection and preprocessing
-    3. Exploratory data analysis
-    4. Model selection and training
-    5. Model evaluation and tuning
-    6. Model deployment and monitoring
+1. Problem Definition
+2. Data collection and preprocessing
+3. Exploratory data analysis
+4. Model selection and training
+5. Model evaluation and tuning
+6. Model deployment and monitoring
 <details>
 <summary>Problem Definition</summary>
 - Formulate a problem statement: Tạo một câu hỏi rõ ràng và ngắn gọn. Câu hỏi này cần bao gồm những gì cần được thực hiện, phân loại và cải tiến. Nó cũng cần cân nhắc tới các yếu tố như là tihs khả thi, độ có sẵn của dữ liệu và các ảnh hưởng tiềm năng.
