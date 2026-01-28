@@ -33,7 +33,7 @@ Note lại mình đã học gì:
         - Ví dụ: các giá trị ngoại lệ, chẳng hạn 1 căn nhà biệt thự 2000 mét vuông giá 200 tỷ trong khi nhà bình thường khoảng 100m2, sẽ khiến linear regression bị nghiêng về điểm đấy → prediction bị lệch
         - Có thể tìm ra các giá trị này bằng cách minh hoạ data của mình thành một scatterplot
 
-        ![image](./images/image_2e813529.png)
+        ![image](./images/image_2e813.png)
 
         - Trong một số trường hợp thì mình có thể loại bỏ hoàn thoàn các điểm như vậy. Hoặc có thể xử dụng các kỹ năng lọc như một ngưỡng xác suất để loại bỏ chúng.
     - Xử lý các giá trị lặp
@@ -61,7 +61,7 @@ Một số phương thức normalization:
 1. Z-score normalization
 - Formula:
 
-![image](./images/image_2ee13529.png)
+![image](./images/image_2ee13.png)
 
 - Range: Khoảng giá trị có thể thay đổi nhưng sẽ giao động quanh 0.
 - Transforms values to have a mean of 0 and standard deviation of 1.
@@ -76,7 +76,7 @@ Một số phương thức normalization:
 - Ngoài 2 cách trong Data Normalization mình có:
     - MaxAbsScaler: Chia cho giá trị tuyệt đối lớn nhất của Feature đó:
 
-    ![image](./images/image_2ee13529.png)
+    ![image](./images/image_2ee13.png)
 
 
     → Phạm vi sẽ nằm trong [-1;1] hoặc [0;1] nếu dữ liệu gốc toàn dương.
@@ -88,7 +88,7 @@ Một số phương thức normalization:
         - Median là giá trị đứng giữa nên không bị ảnh hưởng bởi giá trị ngoại lai.
         - IQR chỉ quan tâm tới 50% số người ở giữa(25% → 75%).
 
-    ![image](./images/image_2ee13529.png)
+    ![image](./images/image_2ee13.png)
 
 
 ### Handling Catergorical Data
@@ -127,13 +127,16 @@ Một số phương thức normalization:
 Stochastic Gradient Descent là biến tấu của Gradient Descent nhưng kèm theo một số ưu điểm về độ hiệu quả, và scalability.
 
 
-![image](./images/image_2ef13529.png)
+![image](./images/image_2ef13.png)
 
 - Trong Gradient Descent cổ điển, gradient được tính từ cả dataset, dẫn tới việc tính toán cho các dataset lớn khó khăn. Trong SGD, graident đươc tính từ mỗi training example, thay vì cả dataset.
 
-    $$
+    
+$$
     \theta_{t+1} = \theta_t - \eta \cdot \nabla_{\theta} J( \theta_t; x^{(i)}, y^{(i)} )
     $$
+    
+
 
 
 $$
@@ -141,7 +144,8 @@ $$
 $$
 
 
-![image](./images/image_2ef13529.png)
+
+![image](./images/image_2ef13.png)
 
 - Điểm khác biệt quan trọng là việc cập nhật tham số giờ được tính từ một điểm data duy nhất
 
@@ -151,14 +155,18 @@ $$
 - Nhận thấy rằng SGD cổ điển luôn đi sáng trái và phải liên tục (oscillation) mà không đi xuống thẳng, khi mình kèm theo momentum, nó sẽ ghi nhớ bước đi trước và cộng gộp các bước nhảy trái phải lại với nhau để triệt tiêu sự dao động.
 - Dần dần khi bước đi thẳng thì nó sẽ cộng dồn tiếp tục theo hướng đi đó.
 
+
 $$
 v_{t+1} = \gamma \cdot v_t + \eta \cdot \nabla_{\theta} J(\theta_t)
 $$
 
 
+
+
 $$
 \theta_{t+1} = \theta_t - v_{t+1}
 $$
+
 
 
 → Vận tốc mới bằng momentum nhân với vận tốc cũ, cộng với learning rate nhân với đạo hàm của cost function (độ dốc của J tại vị trí theta t)
@@ -173,17 +181,21 @@ Chú thích:
 gamma là ký hiệu momentum (thường là 0.9), kiểu muốn quyết định xem mình muốn giữ bao nhiêu % đà của quá khứ.
 
 
+
 $$
 v_{t+1} = \underbrace{\gamma \cdot v_t}_{\text{Đà từ quá khứ}} + \underbrace{\eta \cdot \nabla_{\theta} J(\theta_t)}_{\text{Gia tốc hiện tại}}
 $$
 
 
+
 Cập nhật vị trí:
+
 
 
 $$
 \theta_{t+1} = \theta_t - \underbrace{v_{t+1}}_{\text{Vận tốc gộp}}
 $$
+
 
 - Sử dụng SGD with Momentum giúp tránh cực tiểu cục bộ, giảm giao động, và converge nhanh hơn.
 
@@ -196,17 +208,21 @@ RMSProp là một cải tiến của Gradient Descent và tập trung duy nhất
 Ta tính gradient với tham số cũ:
 
 
+
 $$
 g_t = \nabla_\theta f(\theta_{t-1})
 $$
 
 
+
 Tính độ dốc đã được tích luỹ từ lịch sử độ lớn của các con dốc đã đi qua:
+
 
 
 $$
 v_t = \beta v_{t-1} + (1 - \beta) g_t^2
 $$
+
 
 - B: Decay Rate: thường đặt là 0.9 hoặc 0.99, nhắc tới việc nên nhớ bao nhiều về độ dốc trong quá khứ?
 - v_t lớn → địa hình dốc gắt, thay đổi mạnh
@@ -216,9 +232,11 @@ $$
 Cập nhật bước nhảy:
 
 
+
 $$
 \theta_t = \theta_{t-1} - \frac{\alpha}{\sqrt{v_t} + \epsilon} \cdot g_t
 $$
+
 
 
 Nhìn vào công thức ta thấy nếu mà gt^2 lớn → vt lớn → mẫu số căn vt lớn → phân số a/căn vt nhỏ → bước nhảy bị thu lại
@@ -236,16 +254,20 @@ Các bước:
 
 1. Tính Gradient tại thời điểm t:
 
+
 $$
 g_t = \nabla_{\theta} f(\theta_{t-1})
 $$
 
+
 - "Tại bước hiện tại (t), hãy nhìn vào vị trí cũ (t-1) mà chúng ta đang đứng (theta). Sau đó, tính toán độ dốc (nabla) của ngọn núi (f) tại vị trí đó để xem hướng nào dốc nhất. Kết quả độ dốc đó gọi là g_t.”
 1. Cập nhật momen bậc 1: (tính đà di chuyển từ quá khứ)
+
 
 $$
 m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t
 $$
+
 
 - momen mới (mt) được tính bằng cách lấy 90%(B1=0.9) của đà cũ m_t-1, cộng với 10% độ dốc mới vừa quan sát ((1-B1).gt)
 - B1 là hệ số suy giảm, mình thường có thể chọn được là 0.9
@@ -255,9 +277,11 @@ $$
 
 1. Momen bậc 2 - RMSprop
 
+
 $$
 v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2
 $$
+
 
 - avt: second moment vector đại diện cho độ biến động trung bình của địa hình.
 - B2: Hệ số suy giảm cho momen bậc 2 (thường là 0.999), do muốn ghi nhớ lịch sử độ biến động trong một khoảng thời gian rất dài.
@@ -269,9 +293,11 @@ $$
 - Mình làm như này là do trong bước 5, nếu vt lớn thì thuật toán sẽ chia nhỏ bước đi đi
     1. Bias Correction
 
-    $$
+    
+$$
     \hat{m}_t = \frac{m_t}{1 - \beta_1^t} \\\hat{v}_t = \frac{v_t}{1 - \beta_2^t}
     $$
+    
 
     - Ban đầu mt và vt sẽ được khởi tạo bằng 0,  nên ở bước này ta sẽ chuẩn hoá điều đó.
 
@@ -282,9 +308,11 @@ $$
 
     1. Cập nhật tham số
 
-    $$
+    
+$$
     \theta_t = \theta_{t-1} - \alpha \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}
     $$
+    
 
     - Tính được hướng đi và độ gập ghềnh được chuẩn hoá ta sẽ thay đổi các trọng số thsu
     - m_t_hat: hướng đi đã sửa
@@ -293,7 +321,7 @@ $$
         - Tương tự điều ngược lại
     - Epsilon là một số cực kỳ nhỏ (10^-8) thường để tránh đi việc chia cho 0)
 
-        ![image](./images/image_2f413529.png)
+        ![image](./images/image_2f413.png)
 
 
 ### Machine Learning Workflow
@@ -308,85 +336,61 @@ Các bước chính trong một ML Workflow:
 4. Model selection and training
 5. Model evaluation and tuning
 6. Model deployment and monitoring
-<details>
-<summary>Problem Definition</summary>
-- Formulate a problem statement: Tạo một câu hỏi rõ ràng và ngắn gọn. Câu hỏi này cần bao gồm những gì cần được thực hiện, phân loại và cải tiến. Nó cũng cần cân nhắc tới các yếu tố như là tihs khả thi, độ có sẵn của dữ liệu và các ảnh hưởng tiềm năng.
-- Define Success criteria: Tạo ra các tiêu chí để đánh giá mức độ thành công, cũng như là các KPI mà có thể được sử dụng để đánh giá quá trình của ML. Nó phải đi liền với câu hỏi ở trên.
-- Identify data requirements and constraints: Xác định yêu cầu về data, cũng như là các hạn chế. Bao gồm data types, nguồn thông tin, xem xét chất lượng, và các yếu tố đạo đức liên quan tới việc sử dụng thông tin.
-- Risk assessment:  Xem xét rủi ro liên quan tới chất lượng data, độ phức tạp của model, regulatory compliance, …
+1. Problem Definition
+    - Formulate a problem statement: Tạo một câu hỏi rõ ràng và ngắn gọn. Câu hỏi này cần bao gồm những gì cần được thực hiện, phân loại và cải tiến. Nó cũng cần cân nhắc tới các yếu tố như là tihs khả thi, độ có sẵn của dữ liệu và các ảnh hưởng tiềm năng.
+    - Define Success criteria: Tạo ra các tiêu chí để đánh giá mức độ thành công, cũng như là các KPI mà có thể được sử dụng để đánh giá quá trình của ML. Nó phải đi liền với câu hỏi ở trên.
+    - Identify data requirements and constraints: Xác định yêu cầu về data, cũng như là các hạn chế. Bao gồm data types, nguồn thông tin, xem xét chất lượng, và các yếu tố đạo đức liên quan tới việc sử dụng thông tin.
+    - Risk assessment:  Xem xét rủi ro liên quan tới chất lượng data, độ phức tạp của model, regulatory compliance, …
 
-→ Viết lại tất cả các yếu tố trên vào một document, document này sẽ được sử dụng xuyên suốt quá trình ML để tham chiếu.
+    → Viết lại tất cả các yếu tố trên vào một document, document này sẽ được sử dụng xuyên suốt quá trình ML để tham chiếu.
 
+2. Data collection
+    - Tìm ra các nguồn thông tin và mình cần, tuỳ thuộc vào tính chất của bài toán.
+        - Kaggle, UCI Machine Learning Repository, government databases
+        - Các APIs
+        - Web Scraping: Trích xuất thông tin từ các website với các công cụ như Beautiful Soup Hoặc Scrapy
+        - Surveys or interviews
+        - Có thể sử dụng thông tin nội bộ nếu có.
+    - Đánh giá chất lượng thông tin:
+        - Accuracy: Có sai sót hay không đồng bộ?
+        - Completeness: Có bao quát cho các điều kiện cần thiết?
+        - Consistency: Thông tin có đồng bộ xuyên suốt các nguồn khác nhau?
+        - Relevance: Thông tin có bao gồm nội dung mà mình xem xét?
+        - Timeliness: Có mới/ hiện hành?
 
-</details>
+    → Trong suốt quá trình sử dụng data mình cần phân tích và điều chỉnh model của mình, có thể sẽ cần thêm data hoặc điều chỉnh data sẵn có.
 
-<details>
-<summary>Data collection</summary>
-- Tìm ra các nguồn thông tin và mình cần, tuỳ thuộc vào tính chất của bài toán.
-    - Kaggle, UCI Machine Learning Repository, government databases
-    - Các APIs
-    - Web Scraping: Trích xuất thông tin từ các website với các công cụ như Beautiful Soup Hoặc Scrapy
-    - Surveys or interviews
-    - Có thể sử dụng thông tin nội bộ nếu có.
-- Đánh giá chất lượng thông tin:
-    - Accuracy: Có sai sót hay không đồng bộ?
-    - Completeness: Có bao quát cho các điều kiện cần thiết?
-    - Consistency: Thông tin có đồng bộ xuyên suốt các nguồn khác nhau?
-    - Relevance: Thông tin có bao gồm nội dung mà mình xem xét?
-    - Timeliness: Có mới/ hiện hành?
-
-→ Trong suốt quá trình sử dụng data mình cần phân tích và điều chỉnh model của mình, có thể sẽ cần thêm data hoặc điều chỉnh data sẵn có.
-
-
-</details>
-
-<details>
-<summary>Preprocessing</summary>
+3. Preprocessing
 
 Được viết ở [trên](/2e8135296ab6801ea7fcdd3aa75e0343#2e8135296ab6808aab1bcef8dd42cd2d)
 
+1. Model Selection
+    - Đánh giá xem bài toán đòi hỏi một mô hình như nào? (classification, regression, clustering,…) Cần phải hiểu về các feature, target, data size, data distribution và các pattern khác là gì?
+    - Đánh giá Model Complexity and Interpretability. Xem xét độ phức tạp của mô hình và khả năng nắm bắt các mối quan hệ phức tạp trong dữ liệu. Các mô hình phức tạp hơn như mạng nơ-ron học sâu có thể mang lại độ chính xác dự đoán cao hơn nhưng có thể tốn kém về mặt tính toán. Các mô hình đơn giản như hồi quy tuyến tính dễ hiểu hơn so với các mô hình hộp đen phức tạp như mạng nơ-ron sâu…
+    - Xem xét các thông số để đánh giá độ hiệu quả:
+        - Classification: accuracy, precision, recall, F1-score, ROC-AUC, etc…
+        - Regression: mean squared error (MSE), mean absolute error (MAE), R-squared, …
+        - Đánh giá khả năng tổng quát hoá của mô hình: cross-validation, train-test split, or time-based validation…
+    - Bắt đầu với các mô hình cơ bản để tạo ra một tiêu chuẩn đánh giá. Sau đó có thể huấn luyện nhiều mô hình bằng các data set khác nhau và đánh giá chúng bằng các metric đã chọn.
 
-</details>
+    → Từ đó chọn ra model tốt nhất: Cân nhắc các sự khác biệt của các model với nhau, độ phức tạp, interpretability, computational resources, performance metrics. Sau đó đưa ra model tốt nhất để đảm bảo khả năng tổng quát hoá của chúng trên các dữ liệu mới.
 
-<details>
-<summary>Model Selection</summary>
-- Đánh giá xem bài toán đòi hỏi một mô hình như nào? (classification, regression, clustering,…) Cần phải hiểu về các feature, target, data size, data distribution và các pattern khác là gì?
-- Đánh giá Model Complexity and Interpretability. Xem xét độ phức tạp của mô hình và khả năng nắm bắt các mối quan hệ phức tạp trong dữ liệu. Các mô hình phức tạp hơn như mạng nơ-ron học sâu có thể mang lại độ chính xác dự đoán cao hơn nhưng có thể tốn kém về mặt tính toán. Các mô hình đơn giản như hồi quy tuyến tính dễ hiểu hơn so với các mô hình hộp đen phức tạp như mạng nơ-ron sâu…
-- Xem xét các thông số để đánh giá độ hiệu quả:
-    - Classification: accuracy, precision, recall, F1-score, ROC-AUC, etc…
-    - Regression: mean squared error (MSE), mean absolute error (MAE), R-squared, …
-    - Đánh giá khả năng tổng quát hoá của mô hình: cross-validation, train-test split, or time-based validation…
-- Bắt đầu với các mô hình cơ bản để tạo ra một tiêu chuẩn đánh giá. Sau đó có thể huấn luyện nhiều mô hình bằng các data set khác nhau và đánh giá chúng bằng các metric đã chọn.
+2. Moden Training
+    - Huấn luyện một model bao gồm việc áp dụng thuật toán đó vào training data để học các pattern và relationships. Quá trình này bao gồm việc chia cắt data thành set training và validation.
+    - Chia cắt data: Phân tách data set thành các training, validation sets. Tỷ lệ chia đôi thường là 70-30 hoặc là 80-20 cho training/validation, đảm bảo là cái validation set tượng trưng cho phân bố data ngoài đời thật. (Một set để train, set còn lại là để kiểm tra)
+    - Lựa chọn thuật toán và sử dụng trên Python hoặc Scikit-Learn, VD:
 
-→ Từ đó chọn ra model tốt nhất: Cân nhắc các sự khác biệt của các model với nhau, độ phức tạp, interpretability, computational resources, performance metrics. Sau đó đưa ra model tốt nhất để đảm bảo khả năng tổng quát hoá của chúng trên các dữ liệu mới.
+    ```python
+    from sklearn.linear_model import LogisticRegression
+    
+    model = LogisticRegression()
+    ```
 
-
-</details>
-
-<details>
-<summary>Moden Training</summary>
-- Huấn luyện một model bao gồm việc áp dụng thuật toán đó vào training data để học các pattern và relationships. Quá trình này bao gồm việc chia cắt data thành set training và validation.
-- Chia cắt data: Phân tách data set thành các training, validation sets. Tỷ lệ chia đôi thường là 70-30 hoặc là 80-20 cho training/validation, đảm bảo là cái validation set tượng trưng cho phân bố data ngoài đời thật. (Một set để train, set còn lại là để kiểm tra)
-- Lựa chọn thuật toán và sử dụng trên Python hoặc Scikit-Learn, VD:
-
-```python
-from sklearn.linear_model import LogisticRegression
-
-model = LogisticRegression()
-```
-
-- Huấn luyện model bằng cách sử dụng .fit()
-- Tối ưu hoá tham số. Hyperparameter là tham số mà mình chọn, bước này nói tới việc mình thay đổi các tham số đầu vào để tối ưu hoá mô hình. Có thể sử dụng các cách như grid search, random search, or Bayesian optimization.
-- Đánh giá mô hình bằng cách sử dụng Validation set đã đặt ra ở trên. Tính toán các thông số chẳng hạn như accuracy, precision, recall, F1-score (for classification), or mean squared error như đã nói.
-- Sau khi đã thoả mãn với kết quả của Validation Set thì có thể huấn luyện lại model bằng toàn bộ dataset để tối ưu hoá việc học trước khi đem ra sử dụng.
-
-</details>
-
-<details>
-<summary>Model Deployment</summary>
-- Serialize Model mình đã train vào một format phù hợp để sử dụng. Các format bao gồm pickle (Python), PMML (Predictive Model Markup Language), ONNX (Open Neural Network Exchange),  hoặc là một format tuỳ ý.
-- Áp dụng vào môi trường thực bằng các framworks hoặc thư viện cụ thể (e.g., Flask for web APIs, TensorFlow Serving, or PyTorch serving for serving models).
-- Phiên bản hoá hoặc ghi lại cách thay đổi để mình có thể rollback nếu cần thiết. Tạo một cái quy trình mà mình có thể update các model và huấn luyện dựa trên các data mới và các thuật toán tốt hơn. Có thể sử dụng A/B testing để so sánh các model khác nhau trước khi đem vào sử dụng.
-
-</details>
-
+    - Huấn luyện model bằng cách sử dụng .fit()
+    - Tối ưu hoá tham số. Hyperparameter là tham số mà mình chọn, bước này nói tới việc mình thay đổi các tham số đầu vào để tối ưu hoá mô hình. Có thể sử dụng các cách như grid search, random search, or Bayesian optimization.
+    - Đánh giá mô hình bằng cách sử dụng Validation set đã đặt ra ở trên. Tính toán các thông số chẳng hạn như accuracy, precision, recall, F1-score (for classification), or mean squared error như đã nói.
+    - Sau khi đã thoả mãn với kết quả của Validation Set thì có thể huấn luyện lại model bằng toàn bộ dataset để tối ưu hoá việc học trước khi đem ra sử dụng.
+3. Model Deployment
+    - Serialize Model mình đã train vào một format phù hợp để sử dụng. Các format bao gồm pickle (Python), PMML (Predictive Model Markup Language), ONNX (Open Neural Network Exchange),  hoặc là một format tuỳ ý.
+    - Áp dụng vào môi trường thực bằng các framworks hoặc thư viện cụ thể (e.g., Flask for web APIs, TensorFlow Serving, or PyTorch serving for serving models).
+    - Phiên bản hoá hoặc ghi lại cách thay đổi để mình có thể rollback nếu cần thiết. Tạo một cái quy trình mà mình có thể update các model và huấn luyện dựa trên các data mới và các thuật toán tốt hơn. Có thể sử dụng A/B testing để so sánh các model khác nhau trước khi đem vào sử dụng.
