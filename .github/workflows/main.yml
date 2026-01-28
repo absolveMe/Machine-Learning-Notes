@@ -12,25 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.9'
+          node-version: '18'
           
-      - name: Install Dependencies
-        run: pip install requests
+      - name: Install Tools
+        run: npm install @notionhq/client notion-to-md
           
-      - name: Run Backup Script
+      - name: Run Backup
         env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_SPACE_ID: ${{ secrets.NOTION_SPACE_ID }}
-          NOTION_FILE_TOKEN: ${{ secrets.NOTION_FILE_TOKEN }}
-        run: python backup.py
-        
-      - name: Unzip and Organize
-        run: |
-          unzip -o export.zip -d notion_backup
-          rm export.zip
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}   # Your new 'secret_...'
+          NOTION_PAGE_ID: ${{ secrets.NOTION_SPACE_ID }} # Your Page ID
+        run: node backup.js
           
       - name: Commit and Push
         run: |
