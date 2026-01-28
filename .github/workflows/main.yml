@@ -1,25 +1,36 @@
 name: Notion Backup
 on:
-  workflow_dispatch:      # Allows manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'   # Runs daily at midnight
+    - cron: '0 0 * * *'
 
 jobs:
   backup:
     runs-on: ubuntu-latest
-    name: Backup
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '18'
+          python-version: '3.9'
           
-      - name: Run Notion Backup
-        run: npx notion-backup
+      - name: Install Dependencies
+        run: pip install requests
+          
+      - name: Run Backup Script
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_SPACE_ID: ${{ secrets.NOTION_SPACE_ID }}
-          NOTION_FILE_TOKEN: ${{ secrets.NOTION_FILE_TOKEN }} # <--- This is the new line!
+          NOTION_FILE_TOKEN: ${{ secrets.NOTION_FILE_TOKEN }}
+        run: python backup.py
+        
+      - name: Unzip and Organize
+        run: |
+          unzip -o export.zip -d notion_backup
+          rm export.zip
           
       - name: Commit and Push
         run: |
