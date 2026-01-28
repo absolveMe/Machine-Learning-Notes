@@ -13,18 +13,13 @@ if (!secret || !rawPageIds) {
   process.exit(1);
 }
 
-// Tách ID và khởi tạo Client
 const pageIds = rawPageIds.split(",").map(id => id.trim());
 const notion = new Client({ auth: secret });
 const n2m = new NotionToMarkdown({ notionClient: notion });
 
-// --- HÀM TIỆN ÍCH: LÀM SẠCH TÊN FILE ---
-// Hàm này sẽ thay thế TẤT CẢ ký tự đặc biệt bằng dấu gạch dưới (_)
-// Lab 28/1 -> Lab_28_1
-// Project: A -> Project__A
+// --- HÀM LÀM SẠCH TÊN FILE ---
 function sanitizeFilename(text) {
     if (!text) return "Untitled";
-    // Chỉ giữ lại chữ cái, số, và tiếng Việt có dấu. Còn lại thay bằng _
     return text.replace(/[^a-zA-Z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s-]/g, '_').trim();
 }
 
@@ -44,7 +39,7 @@ async function downloadImage(url, filename) {
       });
   } catch (err) {
       writer.close();
-      fs.unlinkSync(filePath); // Xóa file lỗi
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       throw err;
   }
 }
@@ -53,8 +48,6 @@ n2m.setCustomTransformer('image', async (block) => {
   const { image } = block;
   const imageUrl = image.file?.url || image.external?.url;
   const caption = image.caption.length ? image.caption[0].plain_text : "image";
-  
-  // Tạo tên ảnh an toàn
   const safeName = sanitizeFilename(caption) || "img";
   const uniqueName = `${safeName}_${block.id.slice(0, 5)}.png`;
 
@@ -70,24 +63,32 @@ n2m.setCustomTransformer('equation', async (block) => {
   return `\n$$\n${block.equation.expression}\n$$\n`;
 });
 
-// --- XỬ LÝ DATABASE ---
+// --- XỬ LÝ DATABASE (DÙNG AXIOS TRỰC TIẾP ĐỂ TRÁNH LỖI) ---
 async function processDatabase(dbId, dbTitle) {
-  console.log(`  -> 📂 Đang xử lý Database...`);
+  console.log(`  -> 📂 Đang xử lý Database bằng Axios (Direct API)...`);
   
-  // Query lấy danh sách bài viết
-  const response = await notion.databases.query({
-    database_id: dbId,
-    sorts: [{ property: 'Name', direction: 'ascending' }]
-  });
+  // Dùng Axios gọi trực tiếp API Notion, bỏ qua thư viện bị lỗi
+  const response = await axios.post(
+    `https://api.notion.com/v1/databases/${dbId}/query`,
+    { sorts: [{ property: 'Name', direction: 'ascending' }] },
+    {
+        headers: {
+            'Authorization': `Bearer ${secret}`,
+            'Notion-Version': '2022-06-28',
+            'Content-Type': 'application/json'
+        }
+    }
+  );
 
+  const results = response.data.results;
+  
   let fullContent = `# Database: ${dbTitle}\n\n`;
-  fullContent += `## Mục lục (${response.results.length} trang)\n`;
+  fullContent += `## Mục lục (${results.length} bài)\n`;
 
   // Tạo mục lục
-  for (const page of response.results) {
+  for (const page of results) {
     const titleProp = Object.values(page.properties).find(p => p.type === 'title');
     const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
-    // Tạo link nhảy nội bộ
     const anchor = sanitizeFilename(pageTitle).toLowerCase();
     fullContent += `- [${pageTitle}](#${anchor})\n`;
   }
@@ -95,16 +96,16 @@ async function processDatabase(dbId, dbTitle) {
   fullContent += `\n---\n`;
 
   // Tải nội dung từng trang
-  for (const page of response.results) {
+  for (const page of results) {
     const titleProp = Object.values(page.properties).find(p => p.type === 'title');
     const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
     
     console.log(`    Processing: "${pageTitle}"`);
     
+    // Convert trang con sang Markdown (hàm này vẫn chạy tốt)
     const mdblocks = await n2m.pageToMarkdown(page.id);
     const mdString = n2m.toMarkdownString(mdblocks);
     
-    // Thêm header để tạo anchor link
     fullContent += `\n## <a name="${sanitizeFilename(pageTitle).toLowerCase()}"></a>${pageTitle}\n\n`;
     fullContent += mdString.parent + "\n\n---\n";
   }
@@ -119,44 +120,32 @@ async function backupPage(id) {
   let content = "";
 
   try {
-    // Thử lấy thông tin Page
     try {
+        // Thử lấy page thường
         const pageData = await notion.pages.retrieve({ page_id: id });
         const titleProp = Object.values(pageData.properties).find(p => p.type === 'title');
         title = titleProp?.title[0]?.plain_text || "Untitled";
         
-        // Là Page -> Convert luôn
         const mdblocks = await n2m.pageToMarkdown(id);
         const mdString = n2m.toMarkdownString(mdblocks);
         content = mdString.parent;
 
     } catch (error) {
-        // Nếu lỗi là Validation Error -> Nó là Database
-        if (error.code === 'validation_error') {
-            const dbData = await notion.databases.retrieve({ database_id: id });
-            title = dbData.title[0]?.plain_text || "Untitled_Database";
+        // Nếu lỗi validation -> Chuyển sang xử lý Database
+        if (error.code === 'validation_error' || (error.response && error.response.status === 400)) {
+            // Lấy tên Database (Dùng axios luôn cho chắc)
+            const dbData = await axios.get(
+                `https://api.notion.com/v1/databases/${id}`,
+                { headers: { 'Authorization': `Bearer ${secret}`, 'Notion-Version': '2022-06-28' } }
+            );
+            
+            title = dbData.data.title[0]?.plain_text || "Untitled_Database";
             content = await processDatabase(id, title);
         } else {
             throw error;
         }
     }
     
-    // Đặt tên file (Đã được làm sạch ký tự đặc biệt)
     const fileName = `${sanitizeFilename(title)}.md`;
-
     fs.writeFileSync(fileName, content);
-    console.log(`✅ Thành công! Đã lưu: ${fileName}`);
-    
-  } catch (error) {
-    console.error(`❌ Lỗi tại ID ${id}:`, error.message);
-  }
-}
-
-// Chạy vòng lặp
-(async () => {
-  console.log(`Tìm thấy ${pageIds.length} mục cần backup.`);
-  for (const id of pageIds) {
-    await backupPage(id);
-  }
-  console.log("\n🎉 Hoàn tất toàn bộ.");
-})();
+    console.log(`✅ Thành công!
