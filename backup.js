@@ -40,7 +40,8 @@ async function downloadImage(url, filename) {
   } catch (err) {
       writer.close();
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      throw err;
+      // Không throw lỗi để chương trình chạy tiếp
+      console.error(`  ⚠️ Lỗi tải ảnh ${filename}: ${err.message}`);
   }
 }
 
@@ -63,54 +64,54 @@ n2m.setCustomTransformer('equation', async (block) => {
   return `\n$$\n${block.equation.expression}\n$$\n`;
 });
 
-// --- XỬ LÝ DATABASE (DÙNG AXIOS TRỰC TIẾP ĐỂ TRÁNH LỖI) ---
+// --- XỬ LÝ DATABASE (DÙNG AXIOS TRỰC TIẾP) ---
 async function processDatabase(dbId, dbTitle) {
-  console.log(`  -> 📂 Đang xử lý Database bằng Axios (Direct API)...`);
+  console.log(`  -> 📂 Đang xử lý Database: ${dbTitle}`);
   
-  // Dùng Axios gọi trực tiếp API Notion, bỏ qua thư viện bị lỗi
-  const response = await axios.post(
-    `https://api.notion.com/v1/databases/${dbId}/query`,
-    { sorts: [{ property: 'Name', direction: 'ascending' }] },
-    {
-        headers: {
-            'Authorization': `Bearer ${secret}`,
-            'Notion-Version': '2022-06-28',
-            'Content-Type': 'application/json'
+  try {
+      const response = await axios.post(
+        `https://api.notion.com/v1/databases/${dbId}/query`,
+        { sorts: [{ property: 'Name', direction: 'ascending' }] },
+        {
+            headers: {
+                'Authorization': `Bearer ${secret}`,
+                'Notion-Version': '2022-06-28',
+                'Content-Type': 'application/json'
+            }
         }
-    }
-  );
+      );
 
-  const results = response.data.results;
-  
-  let fullContent = `# Database: ${dbTitle}\n\n`;
-  fullContent += `## Mục lục (${results.length} bài)\n`;
+      const results = response.data.results;
+      let fullContent = `# Database: ${dbTitle}\n\n`;
+      fullContent += `## Mục lục (${results.length} bài)\n`;
 
-  // Tạo mục lục
-  for (const page of results) {
-    const titleProp = Object.values(page.properties).find(p => p.type === 'title');
-    const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
-    const anchor = sanitizeFilename(pageTitle).toLowerCase();
-    fullContent += `- [${pageTitle}](#${anchor})\n`;
+      for (const page of results) {
+        const titleProp = Object.values(page.properties).find(p => p.type === 'title');
+        const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
+        const anchor = sanitizeFilename(pageTitle).toLowerCase();
+        fullContent += `- [${pageTitle}](#${anchor})\n`;
+      }
+
+      fullContent += `\n---\n`;
+
+      for (const page of results) {
+        const titleProp = Object.values(page.properties).find(p => p.type === 'title');
+        const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
+        
+        console.log(`    Processing page: "${pageTitle}"`);
+        
+        const mdblocks = await n2m.pageToMarkdown(page.id);
+        const mdString = n2m.toMarkdownString(mdblocks);
+        
+        fullContent += `\n## <a name="${sanitizeFilename(pageTitle).toLowerCase()}"></a>${pageTitle}\n\n`;
+        fullContent += mdString.parent + "\n\n---\n";
+      }
+
+      return fullContent;
+  } catch (error) {
+      console.error("  ❌ Lỗi Database:", error.message);
+      return `# Lỗi khi tải Database ${dbTitle}\nCannot load content.`;
   }
-
-  fullContent += `\n---\n`;
-
-  // Tải nội dung từng trang
-  for (const page of results) {
-    const titleProp = Object.values(page.properties).find(p => p.type === 'title');
-    const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
-    
-    console.log(`    Processing: "${pageTitle}"`);
-    
-    // Convert trang con sang Markdown (hàm này vẫn chạy tốt)
-    const mdblocks = await n2m.pageToMarkdown(page.id);
-    const mdString = n2m.toMarkdownString(mdblocks);
-    
-    fullContent += `\n## <a name="${sanitizeFilename(pageTitle).toLowerCase()}"></a>${pageTitle}\n\n`;
-    fullContent += mdString.parent + "\n\n---\n";
-  }
-
-  return fullContent;
 }
 
 // --- HÀM CHÍNH ---
@@ -131,9 +132,9 @@ async function backupPage(id) {
         content = mdString.parent;
 
     } catch (error) {
-        // Nếu lỗi validation -> Chuyển sang xử lý Database
+        // Nếu là Database (lỗi 400 validation error)
         if (error.code === 'validation_error' || (error.response && error.response.status === 400)) {
-            // Lấy tên Database (Dùng axios luôn cho chắc)
+            // Lấy tên Database bằng Axios
             const dbData = await axios.get(
                 `https://api.notion.com/v1/databases/${id}`,
                 { headers: { 'Authorization': `Bearer ${secret}`, 'Notion-Version': '2022-06-28' } }
@@ -148,4 +149,18 @@ async function backupPage(id) {
     
     const fileName = `${sanitizeFilename(title)}.md`;
     fs.writeFileSync(fileName, content);
-    console.log(`✅ Thành công!
+    console.log(`✅ Thành công! Đã lưu: ${fileName}`);
+    
+  } catch (error) {
+    console.error(`❌ Lỗi nghiêm trọng tại ID ${id}:`, error.message);
+  }
+}
+
+// Chạy vòng lặp
+(async () => {
+  console.log(`Tìm thấy ${pageIds.length} mục cần backup.`);
+  for (const id of pageIds) {
+    await backupPage(id);
+  }
+  console.log("\n🎉 Hoàn tất toàn bộ.");
+})();
