@@ -1,22 +1,29 @@
 name: Notion Backup
 on:
+  workflow_dispatch:      # Allows manual triggering
   schedule:
-    - cron: '0 0 * * *'  # Runs daily
-  workflow_dispatch:      # Allows you to click a button to run it manually
+    - cron: '0 0 * * *'   # Runs daily at midnight
 
 jobs:
   backup:
     runs-on: ubuntu-latest
+    name: Backup
     steps:
       - uses: actions/checkout@v3
-      - uses: darobin/notion-backup@v1
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Run Notion Backup
+        run: npx notion-backup
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_SPACE_ID: ${{ secrets.NOTION_SPACE_ID }}
+          
       - name: Commit and Push
         run: |
           git config user.name "Backup Bot"
           git config user.email "bot@noreply.github.com"
           git add .
-          git commit -m "Daily Notion Backup"
+          git commit -m "Daily Notion Backup" || echo "No changes to commit"
           git push
