@@ -18,7 +18,7 @@ jobs:
           node-version: '18'
           
       - name: Install Tools
-        run: npm install @notionhq/client notion-to-md
+        run: npm install @notionhq/client notion-to-md axios slugify
           
       - name: Run Backup
         env:
