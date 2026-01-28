@@ -17,17 +17,17 @@ jobs:
         with:
           node-version: '18'
           
-      # Bước này xóa thư viện cũ và cài bản mới nhất (Fix lỗi Database)
-      - name: Install Tools (Force Update)
+      # Bước này QUAN TRỌNG: Xóa sạch file cấu hình cũ để cài bản mới nhất
+      - name: Fresh Install Tools
         run: |
-          rm -rf node_modules package-lock.json
+          rm -rf node_modules package-lock.json package.json
+          npm init -y
           npm install @notionhq/client@latest notion-to-md@latest axios slugify
           
       - name: Run Backup
         env:
-          # Bot cần 2 dòng này để biết ID và Token là gì
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          # Dòng dưới sẽ thử lấy cả 2 tên secret phổ biến để tránh lỗi
+          # Tự động chọn secret đúng dù bạn đặt tên là gì
           NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID || secrets.NOTION_SPACE_ID }}
         run: node backup.js
           
