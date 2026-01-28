@@ -7,10 +7,10 @@ import sys
 # Config
 TOKEN = os.environ.get("NOTION_TOKEN")
 FILE_TOKEN = os.environ.get("NOTION_FILE_TOKEN")
-SPACE_ID = os.environ.get("NOTION_SPACE_ID")
+PAGE_ID = os.environ.get("NOTION_SPACE_ID") # We are using the Page ID here
 
-if not TOKEN or not SPACE_ID:
-    print("Error: Missing NOTION_TOKEN or NOTION_SPACE_ID")
+if not TOKEN or not PAGE_ID:
+    print("Error: Missing variables.")
     sys.exit(1)
 
 headers = {
@@ -19,18 +19,19 @@ headers = {
 }
 
 def request_export():
-    print("Requesting export...")
+    print("Requesting Page Export (Recursive)...")
     url = "https://www.notion.so/api/v3/enqueueTask"
     payload = {
         "task": {
-            "eventName": "exportSpace",
+            "eventName": "exportBlock",
             "request": {
-                "spaceId": SPACE_ID,
+                "blockId": PAGE_ID,
+                "recursive": True,
                 "exportOptions": {
                     "exportType": "markdown",
                     "timeZone": "America/New_York",
                     "locale": "en",
-                    "includeContents": "no_files"
+                    "includeContents": "no_files" # Change to 'everything' if you want images
                 }
             }
         }
@@ -46,7 +47,8 @@ def get_download_link(task_id):
     url = "https://www.notion.so/api/v3/getTasks"
     payload = {"taskIds": [task_id]}
     
-    while True:
+    # Wait loop
+    for _ in range(30): # Timeout after 5 minutes (30 * 10s)
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         result = response.json()['results'][0]
@@ -55,35 +57,25 @@ def get_download_link(task_id):
         print(f"Current state: {state}")
         
         if state == 'success':
-            # --- DEBUG SECTION ---
-            print("\n!!! DEBUG: FULL RESPONSE FROM NOTION !!!")
-            print(json.dumps(result, indent=2))
-            print("!!! END DEBUG !!!\n")
-            # ---------------------
-
-            # Try to find the URL in the standard place
+            # In exportBlock, the URL is often inside 'status' -> 'exportURL'
             download_url = result.get('status', {}).get('exportURL')
             
-            # If not there, try the top level (sometimes happens)
-            if not download_url:
-                download_url = result.get('exportURL')
-
             if download_url:
                 return download_url
             else:
-                print("CRITICAL ERROR: Notion said 'Success' but gave no URL in the usual places.")
-                print("Please copy the DEBUG info above and share it.")
-                sys.exit(1)
+                print("Success reported, but no URL found yet. Retrying...")
                 
         elif state == 'failure':
             print("Export failed!")
-            print(json.dumps(result, indent=2))
             sys.exit(1)
         
         time.sleep(10)
+    
+    print("Error: Timed out waiting for export.")
+    sys.exit(1)
 
 def download_file(url):
-    print(f"Downloading file from {url[:50]}...")
+    print(f"Downloading file...")
     local_filename = "export.zip"
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
