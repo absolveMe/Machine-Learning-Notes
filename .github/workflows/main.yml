@@ -17,20 +17,29 @@ jobs:
         with:
           node-version: '18'
           
-      # Bước này QUAN TRỌNG: Xóa sạch file cấu hình cũ để cài bản mới nhất
-      - name: Fresh Install Tools
+      - name: Run Backup in Clean Room
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID || secrets.NOTION_SPACE_ID }}
         run: |
-          rm -rf node_modules package-lock.json package.json
+          # 1. Tạo phòng cách ly (thư mục mới)
+          mkdir clean_room
+          
+          # 2. Copy code vào đó
+          cp backup.js clean_room/
+          
+          # 3. Vào phòng và cài đặt thư viện MỚI NHẤT (Bỏ qua thư mục node_modules cũ ở ngoài)
+          cd clean_room
           npm init -y
           npm install @notionhq/client@latest notion-to-md@latest axios slugify
           
-      - name: Run Backup
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          # Tự động chọn secret đúng dù bạn đặt tên là gì
-          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID || secrets.NOTION_SPACE_ID }}
-        run: node backup.js
+          # 4. Chạy code
+          node backup.js
           
+          # 5. Đem kết quả (file .md và ảnh) ra ngoài để lưu
+          cp *.md ../ || true
+          if [ -d "images" ]; then cp -r images ../; fi
+
       - name: Commit and Push
         run: |
           git config user.name "Backup Bot"
