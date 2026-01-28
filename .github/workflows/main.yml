@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: '18'
           
+      # Bước này xóa thư viện cũ và cài bản mới nhất (Fix lỗi Database)
       - name: Install Tools (Force Update)
         run: |
           rm -rf node_modules package-lock.json
@@ -24,8 +25,10 @@ jobs:
           
       - name: Run Backup
         env:
+          # Bot cần 2 dòng này để biết ID và Token là gì
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+          # Dòng dưới sẽ thử lấy cả 2 tên secret phổ biến để tránh lỗi
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID || secrets.NOTION_SPACE_ID }}
         run: node backup.js
           
       - name: Commit and Push
