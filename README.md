@@ -1,14 +1,17 @@
-# Machine Learning Notes 
+# Repository Học Machine Learning - Từ Trung Khải
 
-Repository ghi lại quá trình tự học Machine Learning của **Từ Trung Khải**.
+Kho lưu trữ tài liệu và mã nguồn trong quá trình học Machine Learning.
 
-## Cập nhật mới nhất
-- **Current Head:** `Lab28_1`
+## Trạng thái cập nhật
+* Nội dung cập nhật gần nhất: **Lab28_1**
 
-## 🗂 Nội dung chính
+## Nội dung chi tiết
+* **C1, C2, C3:** Là các phần viết giải thích lại nội dung lý thuyết của khoá học trên Coursera.
 
-```text
-├── C1/              # Giải thích Coursera (Phần 1)
-├── C2/              # Giải thích Coursera (Phần 2)
-├── C3/              # Giải thích Coursera (Phần 3)
-└── Lab28_1/         # Bài Lab mới nhất
+## Thông tin về Backup
+* Repository này được backup tự động hằng ngày từ trang Notion cá nhân của Khải.
+
+## Các vấn đề hiển thị (Known Issues)
+Do được chuyển đổi tự động từ Notion, tài liệu hiện vẫn còn một số lỗi chưa được xử lý triệt để:
+* Lỗi render (hiển thị) ở một số ký hiệu toán học.
+* Một số đoạn văn bản bị định dạng vào các block tuỳ ý sai quy cách.
