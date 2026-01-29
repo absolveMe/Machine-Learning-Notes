@@ -23,24 +23,31 @@ function sanitizeFilename(text) {
     return text.replace(/[^a-zA-Z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s-]/g, '_').trim();
 }
 
-// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (QUAN TRỌNG) ---
+// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (V7 - FIX MẠNH MẼ) ---
 function fixFormatting(markdown) {
-    // 1. Sửa lỗi Math bị dính và xuống dòng lộn xộn
-    // Tìm các block $$...$$ và dọn dẹp nội dung bên trong
-    markdown = markdown.replace(/\$\$\n([\s\S]*?)\n\$\$/g, (match, content) => {
-        // Xóa các dòng trống thừa bên trong công thức
-        let cleanContent = content.split('\n').filter(line => line.trim() !== '').join('\n');
-        return `\n\n$$\n${cleanContent}\n$$\n\n`; // Thêm dòng trắng bao quanh
-    });
+    let md = markdown;
 
-    // 2. Sửa lỗi Text bị thụt đầu dòng sau Math (Biến Code Block thành Text thường)
-    // Nếu sau $$ mà có dòng thụt 4 khoảng trắng -> Xóa 4 khoảng trắng đi
-    markdown = markdown.replace(/(\$\$)\n\n    /g, '$1\n\n');
+    // 1. CỨU TIÊU ĐỀ (Headers):
+    // Đảm bảo trước mỗi dấu # (Header) luôn có 2 dòng trắng để nó hiển thị đúng là Tiêu đề
+    // (Tránh trường hợp bị dính vào dòng trên làm mất định dạng to)
+    md = md.replace(/([^\n])\n(#{1,6} )/g, '$1\n\n$2');
 
-    return markdown;
+    // 2. CỨU MATH ALIGN (Sửa lỗi image_5247f5):
+    // Tìm những đoạn \begin{align...} mà chưa được bao bởi $$, và bao nó lại
+    md = md.replace(/([^\$])(\\begin\{align\*?\})([\s\S]*?)(\\end\{align\*?\})/g, '$1\n$$\n$2$3$4\n$$\n');
+
+    // 3. GỠ KHUNG CODE CHO MATH:
+    // Nếu dòng bắt đầu bằng 4 khoảng trắng (hoặc tab) mà chứa $$, xóa khoảng trắng đi để nó thành Math thường
+    md = md.replace(/^(\t|    )(\$\$)/gm, '$2');
+
+    // 4. DỌN DẸP MATH BLOCK:
+    // Xóa các dòng trắng thừa thãi bên trong $$...$$ để công thức gọn hơn
+    md = md.replace(/\$\$\n\s*/g, '$$\n').replace(/\s*\n\$\$/g, '\n$$');
+
+    return md;
 }
 
-// --- HÀM TRÍCH XUẤT TEXT TỪ PROPERTIES ---
+// --- HÀM TRÍCH XUẤT PROPERTIES ---
 function extractProperties(properties) {
     let content = "";
     for (const [key, value] of Object.entries(properties)) {
@@ -89,7 +96,7 @@ n2m.setCustomTransformer('image', async (block) => {
   }
 });
 
-// Transformer cho Math: Chỉ trả về nội dung thô, để hàm fixFormatting xử lý sau
+// Transformer cho Equation: Trả về dạng thô, để hàm fixFormatting xử lý
 n2m.setCustomTransformer('equation', async (block) => {
   return `\n$$\n${block.equation.expression}\n$$\n`;
 });
@@ -132,7 +139,7 @@ async function processDatabase(dbId, dbTitle) {
             pageContent = `### Properties Info:\n${propsContent}\n---\n${pageContent}`;
         }
 
-        // ÁP DỤNG HẬU KỲ SỬA LỖI FORMAT
+        // ÁP DỤNG FIX LỖI FORMAT
         pageContent = fixFormatting(pageContent);
         
         fullContent += `\n## <a name="${sanitizeFilename(pageTitle).toLowerCase()}"></a>${pageTitle}\n\n`;
@@ -161,7 +168,7 @@ async function backupPage(id) {
         const mdblocks = await n2m.pageToMarkdown(id);
         const mdString = n2m.toMarkdownString(mdblocks);
         
-        // Sửa lỗi format cho page thường
+        // Fix lỗi cho page thường
         content = fixFormatting(mdString.parent);
 
     } catch (error) {
