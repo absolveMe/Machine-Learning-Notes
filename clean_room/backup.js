@@ -23,31 +23,27 @@ function sanitizeFilename(text) {
     return text.replace(/[^a-zA-Z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s-]/g, '_').trim();
 }
 
-// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (V8 - FIX TOÁN HỌC) ---
+// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (V9 - AN TOÀN TUYỆT ĐỐI) ---
 function fixFormatting(markdown) {
+    // FIX QUAN TRỌNG: Nếu markdown là undefined hoặc null, trả về chuỗi rỗng ngay
+    if (!markdown) return "";
+
     let md = markdown;
 
     // 1. NÂNG CẤP TOÁN ĐỨNG RIÊNG (Standalone Inline Math -> Block Math)
-    // Nếu một dòng chỉ chứa công thức toán nằm giữa 2 dấu $ (ví dụ: $ f(x) = y $),
-    // hãy đổi nó thành $$...$$ để hiển thị to và đẹp.
-    // Regex tìm: Đầu dòng + dấu $ + nội dung + dấu $ + cuối dòng
     md = md.replace(/^\s*\$ (.+) \$\s*$/gm, '\n$$\n$1\n$$\n');
     md = md.replace(/^\s*\$(.+)\$\s*$/gm, '\n$$\n$1\n$$\n');
 
     // 2. SỬA LỖI KHOẢNG TRẮNG TRONG TOÁN INLINE
-    // GitHub không thích dấu cách ngay sau dấu $ (ví dụ: $ x $ -> lỗi, $x$ -> ok)
-    // Lệnh này xóa khoảng trắng thừa ở 2 đầu: $ x $ -> $x$
     md = md.replace(/([^\$])\$ ([^\$\n]+?) \$([^\$])/g, '$1$$$2$$$3');
 
-    // 3. CỨU TIÊU ĐỀ (Headers):
-    // Đảm bảo trước mỗi dấu # (Header) luôn có 2 dòng trắng
+    // 3. CỨU TIÊU ĐỀ (Headers)
     md = md.replace(/([^\n])\n(#{1,6} )/g, '$1\n\n$2');
 
-    // 4. CỨU MATH ALIGN (Cho các phương trình nhiều dòng):
-    // Bao bọc \begin{align} bằng $$ nếu chưa có
+    // 4. CỨU MATH ALIGN
     md = md.replace(/([^\$])(\\begin\{align\*?\})([\s\S]*?)(\\end\{align\*?\})/g, '$1\n$$\n$2$3$4\n$$\n');
 
-    // 5. DỌN DẸP DÒNG TRỐNG THỪA TRONG MATH BLOCK
+    // 5. DỌN DẸP DÒNG TRỐNG THỪA
     md = md.replace(/\$\$\n\s*/g, '$$\n').replace(/\s*\n\$\$/g, '\n$$');
 
     return md;
@@ -102,7 +98,6 @@ n2m.setCustomTransformer('image', async (block) => {
   }
 });
 
-// Transformer cho Equation Block (Khối toán to)
 n2m.setCustomTransformer('equation', async (block) => {
   return `\n$$\n${block.equation.expression}\n$$\n`;
 });
@@ -138,14 +133,15 @@ async function processDatabase(dbId, dbTitle) {
         
         const mdblocks = await n2m.pageToMarkdown(page.id);
         const mdString = n2m.toMarkdownString(mdblocks);
-        let pageContent = mdString.parent;
+        // FIX: Thêm || "" để đảm bảo không bao giờ bị undefined
+        let pageContent = mdString.parent || "";
 
         const propsContent = extractProperties(page.properties);
         if (propsContent) {
             pageContent = `### Properties Info:\n${propsContent}\n---\n${pageContent}`;
         }
 
-        // ÁP DỤNG FIX LỖI FORMAT
+        // ÁP DỤNG FIX LỖI FORMAT (An toàn hơn)
         pageContent = fixFormatting(pageContent);
         
         fullContent += `\n## <a name="${sanitizeFilename(pageTitle).toLowerCase()}"></a>${pageTitle}\n\n`;
@@ -155,7 +151,8 @@ async function processDatabase(dbId, dbTitle) {
       return fullContent;
   } catch (error) {
       console.error("  ❌ Lỗi Database:", error.message);
-      return `# Lỗi khi tải Database ${dbTitle}\nCannot load content.`;
+      // Trả về nội dung lỗi thay vì crash để các DB khác vẫn chạy tiếp được
+      return `# Lỗi khi tải Database ${dbTitle}\nLỗi: ${error.message}`;
   }
 }
 
@@ -174,8 +171,8 @@ async function backupPage(id) {
         const mdblocks = await n2m.pageToMarkdown(id);
         const mdString = n2m.toMarkdownString(mdblocks);
         
-        // Fix lỗi cho page thường
-        content = fixFormatting(mdString.parent);
+        // FIX: Thêm || "" ở đây nữa
+        content = fixFormatting(mdString.parent || "");
 
     } catch (error) {
         if (error.code === 'validation_error' || (error.response && error.response.status === 400)) {
