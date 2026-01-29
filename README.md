@@ -12,3 +12,4 @@
 Do được chuyển đổi tự động từ Notion, tài liệu hiện vẫn còn một số lỗi chưa được xử lý triệt để:
 * Lỗi render (hiển thị) ở một số ký hiệu toán học.
 * Một số đoạn văn bản bị định dạng vào các block tuỳ ý sai quy cách.
+* Đang có lỗi khiến các hình ảnh bị lặp đi lặp lai.
