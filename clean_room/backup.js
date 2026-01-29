@@ -23,11 +23,27 @@ function sanitizeFilename(text) {
     return text.replace(/[^a-zA-Z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s-]/g, '_').trim();
 }
 
-// --- HÀM TRÍCH XUẤT TEXT TỪ PROPERTIES (CỘT) ---
+// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (QUAN TRỌNG) ---
+function fixFormatting(markdown) {
+    // 1. Sửa lỗi Math bị dính và xuống dòng lộn xộn
+    // Tìm các block $$...$$ và dọn dẹp nội dung bên trong
+    markdown = markdown.replace(/\$\$\n([\s\S]*?)\n\$\$/g, (match, content) => {
+        // Xóa các dòng trống thừa bên trong công thức
+        let cleanContent = content.split('\n').filter(line => line.trim() !== '').join('\n');
+        return `\n\n$$\n${cleanContent}\n$$\n\n`; // Thêm dòng trắng bao quanh
+    });
+
+    // 2. Sửa lỗi Text bị thụt đầu dòng sau Math (Biến Code Block thành Text thường)
+    // Nếu sau $$ mà có dòng thụt 4 khoảng trắng -> Xóa 4 khoảng trắng đi
+    markdown = markdown.replace(/(\$\$)\n\n    /g, '$1\n\n');
+
+    return markdown;
+}
+
+// --- HÀM TRÍCH XUẤT TEXT TỪ PROPERTIES ---
 function extractProperties(properties) {
     let content = "";
     for (const [key, value] of Object.entries(properties)) {
-        // Chỉ lấy các cột dạng Text, Rich Text, hoặc URL (bỏ qua tên và các thẻ select)
         if (value.type === "rich_text" && value.rich_text.length > 0) {
             const text = value.rich_text.map(t => t.plain_text).join("");
             content += `**${key}**: \n${text}\n\n`;
@@ -73,6 +89,7 @@ n2m.setCustomTransformer('image', async (block) => {
   }
 });
 
+// Transformer cho Math: Chỉ trả về nội dung thô, để hàm fixFormatting xử lý sau
 n2m.setCustomTransformer('equation', async (block) => {
   return `\n$$\n${block.equation.expression}\n$$\n`;
 });
@@ -92,7 +109,6 @@ async function processDatabase(dbId, dbTitle) {
       let fullContent = `# Database: ${dbTitle}\n\n`;
       fullContent += `## Mục lục (${results.length} bài)\n`;
 
-      // Tạo Mục Lục
       for (const page of results) {
         const titleProp = Object.values(page.properties).find(p => p.type === 'title');
         const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
@@ -101,31 +117,23 @@ async function processDatabase(dbId, dbTitle) {
       }
       fullContent += `\n---\n`;
 
-      // Tải Nội Dung
       for (const page of results) {
         const titleProp = Object.values(page.properties).find(p => p.type === 'title');
         const pageTitle = titleProp?.title[0]?.plain_text || "Untitled";
         
         console.log(`    Processing page: "${pageTitle}"`);
         
-        // 1. Lấy nội dung Body
         const mdblocks = await n2m.pageToMarkdown(page.id);
         const mdString = n2m.toMarkdownString(mdblocks);
         let pageContent = mdString.parent;
 
-        // 2. Lấy nội dung từ Cột (Properties) - FIX LỖI THIẾU CODE
         const propsContent = extractProperties(page.properties);
         if (propsContent) {
             pageContent = `### Properties Info:\n${propsContent}\n---\n${pageContent}`;
         }
 
-        // 3. Kiểm tra nếu rỗng
-        if (!pageContent.trim()) {
-            pageContent = "*(Trang này không có nội dung trong Body hoặc Properties)*";
-            console.log(`      ⚠️ Cảnh báo: Trang "${pageTitle}" trống trơn!`);
-        } else {
-            console.log(`      ✅ Đã lấy được nội dung.`);
-        }
+        // ÁP DỤNG HẬU KỲ SỬA LỖI FORMAT
+        pageContent = fixFormatting(pageContent);
         
         fullContent += `\n## <a name="${sanitizeFilename(pageTitle).toLowerCase()}"></a>${pageTitle}\n\n`;
         fullContent += pageContent + "\n\n---\n";
@@ -152,7 +160,9 @@ async function backupPage(id) {
         
         const mdblocks = await n2m.pageToMarkdown(id);
         const mdString = n2m.toMarkdownString(mdblocks);
-        content = mdString.parent;
+        
+        // Sửa lỗi format cho page thường
+        content = fixFormatting(mdString.parent);
 
     } catch (error) {
         if (error.code === 'validation_error' || (error.response && error.response.status === 400)) {
@@ -169,7 +179,7 @@ async function backupPage(id) {
     
     const fileName = `${sanitizeFilename(title)}.md`;
     fs.writeFileSync(fileName, content);
-    console.log(`✅ Hoàn tất! File đã lưu: ${fileName}`);
+    console.log(`✅ Thành công! Đã lưu: ${fileName}`);
     
   } catch (error) {
     console.error(`❌ Lỗi nghiêm trọng tại ID ${id}:`, error.message);
