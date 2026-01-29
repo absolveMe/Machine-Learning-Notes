@@ -23,25 +23,31 @@ function sanitizeFilename(text) {
     return text.replace(/[^a-zA-Z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s-]/g, '_').trim();
 }
 
-// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (V7 - FIX MẠNH MẼ) ---
+// --- HÀM HẬU KỲ: SỬA LỖI HIỂN THỊ (V8 - FIX TOÁN HỌC) ---
 function fixFormatting(markdown) {
     let md = markdown;
 
-    // 1. CỨU TIÊU ĐỀ (Headers):
-    // Đảm bảo trước mỗi dấu # (Header) luôn có 2 dòng trắng để nó hiển thị đúng là Tiêu đề
-    // (Tránh trường hợp bị dính vào dòng trên làm mất định dạng to)
+    // 1. NÂNG CẤP TOÁN ĐỨNG RIÊNG (Standalone Inline Math -> Block Math)
+    // Nếu một dòng chỉ chứa công thức toán nằm giữa 2 dấu $ (ví dụ: $ f(x) = y $),
+    // hãy đổi nó thành $$...$$ để hiển thị to và đẹp.
+    // Regex tìm: Đầu dòng + dấu $ + nội dung + dấu $ + cuối dòng
+    md = md.replace(/^\s*\$ (.+) \$\s*$/gm, '\n$$\n$1\n$$\n');
+    md = md.replace(/^\s*\$(.+)\$\s*$/gm, '\n$$\n$1\n$$\n');
+
+    // 2. SỬA LỖI KHOẢNG TRẮNG TRONG TOÁN INLINE
+    // GitHub không thích dấu cách ngay sau dấu $ (ví dụ: $ x $ -> lỗi, $x$ -> ok)
+    // Lệnh này xóa khoảng trắng thừa ở 2 đầu: $ x $ -> $x$
+    md = md.replace(/([^\$])\$ ([^\$\n]+?) \$([^\$])/g, '$1$$$2$$$3');
+
+    // 3. CỨU TIÊU ĐỀ (Headers):
+    // Đảm bảo trước mỗi dấu # (Header) luôn có 2 dòng trắng
     md = md.replace(/([^\n])\n(#{1,6} )/g, '$1\n\n$2');
 
-    // 2. CỨU MATH ALIGN (Sửa lỗi image_5247f5):
-    // Tìm những đoạn \begin{align...} mà chưa được bao bởi $$, và bao nó lại
+    // 4. CỨU MATH ALIGN (Cho các phương trình nhiều dòng):
+    // Bao bọc \begin{align} bằng $$ nếu chưa có
     md = md.replace(/([^\$])(\\begin\{align\*?\})([\s\S]*?)(\\end\{align\*?\})/g, '$1\n$$\n$2$3$4\n$$\n');
 
-    // 3. GỠ KHUNG CODE CHO MATH:
-    // Nếu dòng bắt đầu bằng 4 khoảng trắng (hoặc tab) mà chứa $$, xóa khoảng trắng đi để nó thành Math thường
-    md = md.replace(/^(\t|    )(\$\$)/gm, '$2');
-
-    // 4. DỌN DẸP MATH BLOCK:
-    // Xóa các dòng trắng thừa thãi bên trong $$...$$ để công thức gọn hơn
+    // 5. DỌN DẸP DÒNG TRỐNG THỪA TRONG MATH BLOCK
     md = md.replace(/\$\$\n\s*/g, '$$\n').replace(/\s*\n\$\$/g, '\n$$');
 
     return md;
@@ -96,7 +102,7 @@ n2m.setCustomTransformer('image', async (block) => {
   }
 });
 
-// Transformer cho Equation: Trả về dạng thô, để hàm fixFormatting xử lý
+// Transformer cho Equation Block (Khối toán to)
 n2m.setCustomTransformer('equation', async (block) => {
   return `\n$$\n${block.equation.expression}\n$$\n`;
 });
