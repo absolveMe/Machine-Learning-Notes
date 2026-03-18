@@ -2,7 +2,7 @@
 
 
 ## Trạng thái cập nhật
-* Nội dung gần nhất: Malware Analysis/Chapter 2
+* Nội dung gần nhất: Machine Learning/KNN
 
 ## Nội dung chi tiết
 * Note của **Malware Analysis** và **Machine Learning** sẽ được chia vào các tệp tương ứng.
