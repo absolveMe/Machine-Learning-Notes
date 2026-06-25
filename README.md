@@ -2,7 +2,7 @@
 
 
 ## Trạng thái cập nhật
-* Nội dung gần nhất: Machine Learning/KNN
+* Nội dung gần nhất: Machine Learning/C2_Week2
 
 ## Nội dung chi tiết
 * Note của **Malware Analysis** và **Machine Learning** sẽ được chia vào các tệp tương ứng.
